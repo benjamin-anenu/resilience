@@ -74,6 +74,7 @@ const App = () => (
               <Route path="/accountability" element={<Accountability />} />
               <Route path="/accountability/:realmAddress" element={<AccountabilityDetail />} />
               <Route path="/bounty-board" element={<BountyBoard />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               {/* Legacy redirects */}
               <Route path="/staking" element={<Navigate to="/accountability" replace />} />
               <Route path="/my-bonds" element={<Navigate to="/accountability" replace />} />

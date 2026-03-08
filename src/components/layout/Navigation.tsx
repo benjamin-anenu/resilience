@@ -172,6 +172,18 @@ export function Navigation() {
               README
             </Link>
 
+            <Link
+              to="/leaderboard"
+              onClick={() => trackEvent('click', 'nav_leaderboard')}
+              className={cn(
+                'flex items-center gap-1 font-display text-sm font-medium tracking-wider transition-colors hover:text-foreground',
+                isActiveRoute('/leaderboard') ? 'text-primary' : 'text-muted-foreground',
+              )}
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              LEADERBOARD
+            </Link>
+
             {navGroups.map((group) => (
               <NavDropdown key={group.label} group={group} isActive={isGroupActive(group)} />
             ))}
