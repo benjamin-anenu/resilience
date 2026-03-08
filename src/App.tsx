@@ -34,6 +34,7 @@ import HackathonDemo from "./pages/HackathonDemo";
 import BountyBoard from "./pages/BountyBoard";
 import Tools from "./pages/Tools";
 import DeployFeed from "./pages/DeployFeed";
+import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 
 // Admin imports
