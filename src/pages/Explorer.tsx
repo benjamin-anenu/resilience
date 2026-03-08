@@ -1,16 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { useTrackEvent } from '@/components/layout/Layout';
 import { EcosystemStats, EcosystemHeatmap, EcosystemPulse, SearchBar, ProgramLeaderboard, BuildersInPublicFeed } from '@/components/explorer';
-import { BuilderLeaderboard } from '@/components/explorer/BuilderLeaderboard';
 import { TrendTicker } from '@/components/explorer/TrendTicker';
 import { TrendFeed } from '@/components/explorer/TrendFeed';
 import { useExplorerProjects } from '@/hooks/useExplorerProjects';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Megaphone, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Megaphone, ArrowLeft, ArrowRight, Trophy } from 'lucide-react';
 import {
   Pagination,
   PaginationContent,
@@ -195,12 +194,18 @@ const Explorer = () => {
 
           {activeView === 'list' && (
             <>
-          {/* Builder Leaderboard */}
-          {!isLoading && projects && projects.length > 0 && (
-            <div className="mb-6">
-              <BuilderLeaderboard projects={projects} />
+          {/* Leaderboard CTA */}
+          <Link
+            to="/leaderboard"
+            className="mb-6 flex items-center justify-between rounded-sm border border-primary/20 bg-primary/5 px-4 py-3 transition-colors hover:bg-primary/10"
+          >
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              <span className="font-display text-sm font-semibold text-foreground">Ecosystem Leaderboard</span>
+              <span className="text-xs text-muted-foreground">— Builders, Security, TVL & more</span>
             </div>
-          )}
+            <ArrowRight className="h-4 w-4 text-primary" />
+          </Link>
 
           {/* Search & Filters */}
           <div className="mb-6">

@@ -5,7 +5,7 @@ import {
   Compass, GitBranch, Coins, Rocket, Gift,
   Activity, Globe, MessageCircle,
   Target, FolderKanban,
-  BookOpen, Layers, BookA,
+  BookOpen, Layers, BookA, Trophy,
 } from 'lucide-react';
 import { useAnalyticsTracker } from '@/hooks/useAnalyticsTracker';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -170,6 +170,18 @@ export function Navigation() {
               )}
             >
               README
+            </Link>
+
+            <Link
+              to="/leaderboard"
+              onClick={() => trackEvent('click', 'nav_leaderboard')}
+              className={cn(
+                'flex items-center gap-1 font-display text-sm font-medium tracking-wider transition-colors hover:text-foreground',
+                isActiveRoute('/leaderboard') ? 'text-primary' : 'text-muted-foreground',
+              )}
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              LEADERBOARD
             </Link>
 
             {navGroups.map((group) => (
