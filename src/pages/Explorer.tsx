@@ -1,9 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { useTrackEvent } from '@/components/layout/Layout';
 import { EcosystemStats, EcosystemHeatmap, EcosystemPulse, SearchBar, ProgramLeaderboard, BuildersInPublicFeed } from '@/components/explorer';
-import { TrendTicker } from '@/components/explorer/TrendTicker';
 import { TrendTicker } from '@/components/explorer/TrendTicker';
 import { TrendFeed } from '@/components/explorer/TrendFeed';
 import { useExplorerProjects } from '@/hooks/useExplorerProjects';
