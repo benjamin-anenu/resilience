@@ -10,7 +10,7 @@ import { useExplorerProjects } from '@/hooks/useExplorerProjects';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Megaphone, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Megaphone, ArrowLeft, ArrowRight, Trophy } from 'lucide-react';
 import {
   Pagination,
   PaginationContent,
