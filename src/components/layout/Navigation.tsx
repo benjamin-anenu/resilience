@@ -5,7 +5,7 @@ import {
   Compass, GitBranch, Coins, Rocket, Gift,
   Activity, Globe, MessageCircle,
   Target, FolderKanban,
-  BookOpen, Layers, BookA,
+  BookOpen, Layers, BookA, Trophy,
 } from 'lucide-react';
 import { useAnalyticsTracker } from '@/hooks/useAnalyticsTracker';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
