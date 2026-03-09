@@ -1089,7 +1089,7 @@ Deno.serve(async (req) => {
       console.log("No dependency files found (Cargo.toml, package.json, requirements.txt, or pyproject.toml)");
       
       const result: DependencyAnalysisResult = {
-        healthScore: 50, // Neutral - can't analyze
+        healthScore: 0, // Unknown - no dependency files found
         totalDependencies: 0,
         outdatedCount: 0,
         criticalCount: 0,

@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
   Trophy, TrendingUp, Shield, Landmark, DollarSign, GitBranch,
-  GitCommit, Users, Crown, ArrowUpRight, Zap,
+  GitCommit, Users, Crown, ArrowUpRight, Zap, Star, Heart,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -60,7 +60,7 @@ const categories: Category[] = [
     description: 'Best security posture by OpenSSF scorecard and lowest vulnerability counts',
     subMetrics: [
       { key: 'openssf', label: 'OpenSSF Score', icon: Shield, getValue: (p) => Number(p.openssf_score) || 0, format: (v) => v.toFixed(1) },
-      { key: 'vuln', label: 'Least Vulnerabilities', icon: Shield, getValue: (p) => -(p.vulnerability_count || 0), format: (v) => Math.abs(v).toString() },
+      { key: 'vuln', label: 'Least Vulnerabilities', icon: Shield, getValue: (p) => p.vulnerability_count != null ? (100 - p.vulnerability_count) : -1, format: (v) => (100 - v).toString() },
     ],
   },
   {
@@ -83,6 +83,15 @@ const categories: Category[] = [
     ],
   },
   {
+    id: 'community',
+    label: 'Community',
+    icon: Heart,
+    description: 'Largest communities by GitHub stars and social following',
+    subMetrics: [
+      { key: 'stars', label: 'GitHub Stars', icon: Star, getValue: (p) => (p as any).github_stars || 0, format: (v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toLocaleString() },
+    ],
+  },
+  {
     id: 'dependencies',
     label: 'Dependencies',
     icon: GitBranch,
@@ -100,7 +109,10 @@ const medalColors = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
 function RankedList({ projects, metric }: { projects: ExplorerProject[]; metric: SubMetric }) {
   const ranked = useMemo(() => {
     return [...projects]
-      .filter((p) => metric.getValue(p) !== 0)
+      .filter((p) => {
+        const v = metric.getValue(p);
+        return v !== 0 && v !== -1; // exclude zero and unscanned (-1)
+      })
       .sort((a, b) => metric.getValue(b) - metric.getValue(a))
       .slice(0, 25);
   }, [projects, metric]);

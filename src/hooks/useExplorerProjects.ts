@@ -32,6 +32,7 @@ export interface ExplorerProject {
   tvl_usd: number;
   integrated_score: number;
   // Details toggle fields
+  github_stars: number;
   github_contributors: number;
   x_username: string | null;
   github_analyzed_at: string | null;
@@ -130,6 +131,7 @@ export function useExplorerProjects() {
         tvl_usd: profile.tvl_usd || 0,
         integrated_score: profile.integrated_score || 0,
         // Details toggle fields
+        github_stars: profile.github_stars || 0,
         github_contributors: profile.github_contributors || 0,
         x_username: profile.x_username || null,
         github_analyzed_at: profile.github_analyzed_at || null,

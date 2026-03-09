@@ -178,10 +178,11 @@ Deno.serve(async (req) => {
 
     // Fetch repo, commits, contributors, releases in parallel
     // Events and stats fetched separately with pagination/retry logic
-    const [repoResponse, commitsResponse, contributorsResponse, releasesResponse, languagesResponse] = await Promise.all([
+    const [repoResponse, commitsResponse, contributorCountResponse, topContributorsResponse, releasesResponse, languagesResponse] = await Promise.all([
       fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}`, githubToken),
       fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/commits?since=${sinceDate}&per_page=100`, githubToken),
-      fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/contributors?per_page=10`, githubToken),
+      fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/contributors?per_page=1`, githubToken),
+      fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/contributors?per_page=5`, githubToken),
       fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/releases?per_page=10`, githubToken),
       fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/languages`, githubToken),
     ]);
@@ -219,10 +220,24 @@ Deno.serve(async (req) => {
       commits = await commitsResponse.json();
     }
     
-    // Parse contributors
+    // Parse contributor COUNT using Link header pagination trick
+    let contributorCount = 0;
+    if (contributorCountResponse.ok) {
+      const linkHeader = contributorCountResponse.headers.get("Link");
+      if (linkHeader) {
+        const match = linkHeader.match(/[&?]page=(\d+)>;\s*rel="last"/);
+        if (match) contributorCount = parseInt(match[1], 10);
+      } else {
+        const countData = await contributorCountResponse.json();
+        contributorCount = Array.isArray(countData) ? countData.length : 0;
+      }
+    }
+    console.log(`Contributor count (via Link header): ${contributorCount}`);
+    
+    // Parse top 5 contributors for display
     let contributors: any[] = [];
-    if (contributorsResponse.ok) {
-      contributors = await contributorsResponse.json();
+    if (topContributorsResponse.ok) {
+      contributors = await topContributorsResponse.json();
     }
     
     // Parse releases
@@ -283,7 +298,7 @@ Deno.serve(async (req) => {
       ? { tag: releases[0].tag_name, date: releases[0].published_at }
       : null;
 
-    // Top contributors
+    // Top contributors (from the separate per_page=5 call)
     const topContributors = contributors.slice(0, 5).map((c: any) => ({
       login: c.login,
       contributions: c.contributions,
@@ -345,10 +360,11 @@ Deno.serve(async (req) => {
 
     // === CONTRIBUTOR DIVERSITY (0-20 points) ===
     // Solo devs with high activity get 8 pts instead of 5
-    const contributorCount = contributors.length;
+    // contributorCount is now from Link header pagination (accurate)
     const isSoloHighActivity = contributorCount === 1 && adjustedActivity > 30;
-    if (contributorCount > 20) resilienceScore += 20;
-    else if (contributorCount > 10) resilienceScore += 17;
+    if (contributorCount > 50) resilienceScore += 20;
+    else if (contributorCount > 20) resilienceScore += 17;
+    else if (contributorCount > 10) resilienceScore += 15;
     else if (contributorCount >= 5) resilienceScore += 13;
     else if (contributorCount >= 3) resilienceScore += 10;
     else if (isSoloHighActivity) resilienceScore += 8;
