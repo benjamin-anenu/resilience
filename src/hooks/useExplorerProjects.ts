@@ -131,6 +131,7 @@ export function useExplorerProjects() {
         tvl_usd: profile.tvl_usd || 0,
         integrated_score: profile.integrated_score || 0,
         // Details toggle fields
+        github_stars: profile.github_stars || 0,
         github_contributors: profile.github_contributors || 0,
         x_username: profile.x_username || null,
         github_analyzed_at: profile.github_analyzed_at || null,
