@@ -178,10 +178,11 @@ Deno.serve(async (req) => {
 
     // Fetch repo, commits, contributors, releases in parallel
     // Events and stats fetched separately with pagination/retry logic
-    const [repoResponse, commitsResponse, contributorsResponse, releasesResponse, languagesResponse] = await Promise.all([
+    const [repoResponse, commitsResponse, contributorCountResponse, topContributorsResponse, releasesResponse, languagesResponse] = await Promise.all([
       fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}`, githubToken),
       fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/commits?since=${sinceDate}&per_page=100`, githubToken),
-      fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/contributors?per_page=10`, githubToken),
+      fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/contributors?per_page=1`, githubToken),
+      fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/contributors?per_page=5`, githubToken),
       fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/releases?per_page=10`, githubToken),
       fetchWithAuth(`https://api.github.com/repos/${owner}/${repo}/languages`, githubToken),
     ]);
@@ -219,10 +220,24 @@ Deno.serve(async (req) => {
       commits = await commitsResponse.json();
     }
     
-    // Parse contributors
+    // Parse contributor COUNT using Link header pagination trick
+    let contributorCount = 0;
+    if (contributorCountResponse.ok) {
+      const linkHeader = contributorCountResponse.headers.get("Link");
+      if (linkHeader) {
+        const match = linkHeader.match(/[&?]page=(\d+)>;\s*rel="last"/);
+        if (match) contributorCount = parseInt(match[1], 10);
+      } else {
+        const countData = await contributorCountResponse.json();
+        contributorCount = Array.isArray(countData) ? countData.length : 0;
+      }
+    }
+    console.log(`Contributor count (via Link header): ${contributorCount}`);
+    
+    // Parse top 5 contributors for display
     let contributors: any[] = [];
-    if (contributorsResponse.ok) {
-      contributors = await contributorsResponse.json();
+    if (topContributorsResponse.ok) {
+      contributors = await topContributorsResponse.json();
     }
     
     // Parse releases
