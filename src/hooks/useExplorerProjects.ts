@@ -32,6 +32,7 @@ export interface ExplorerProject {
   tvl_usd: number;
   integrated_score: number;
   // Details toggle fields
+  github_stars: number;
   github_contributors: number;
   x_username: string | null;
   github_analyzed_at: string | null;
