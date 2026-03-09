@@ -2422,6 +2422,7 @@ export type Database = {
       }
     }
     Functions: {
+      auto_resolve_stale_alerts: { Args: never; Returns: undefined }
       clean_expired_dedup: { Args: never; Returns: undefined }
       compute_zscore: {
         Args: {
@@ -2455,6 +2456,8 @@ export type Database = {
         Args: { p_protocol_id: string; p_rule_id: string }
         Returns: boolean
       }
+      prune_old_signals: { Args: never; Returns: undefined }
+      refresh_signal_baselines: { Args: never; Returns: undefined }
       snapshot_date_day: { Args: { ts: string }; Returns: string }
     }
     Enums: {
