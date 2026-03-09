@@ -1,6 +1,6 @@
 import { Layout } from '@/components/layout/Layout';
-import { SystemHealthBar, ProtocolHealthGrid, AlertFeed, CanaryStatus } from '@/components/aegis';
-import { Shield, Activity, Radio } from 'lucide-react';
+import { SystemHealthBar, ProtocolHealthGrid, AlertFeed, CanaryStatus, SubscriptionPanel } from '@/components/aegis';
+import { Shield, Activity, Radio, Bell } from 'lucide-react';
 
 export default function Aegis() {
   return (
