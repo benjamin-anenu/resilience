@@ -60,7 +60,7 @@ const categories: Category[] = [
     description: 'Best security posture by OpenSSF scorecard and lowest vulnerability counts',
     subMetrics: [
       { key: 'openssf', label: 'OpenSSF Score', icon: Shield, getValue: (p) => Number(p.openssf_score) || 0, format: (v) => v.toFixed(1) },
-      { key: 'vuln', label: 'Least Vulnerabilities', icon: Shield, getValue: (p) => -(p.vulnerability_count || 0), format: (v) => Math.abs(v).toString() },
+      { key: 'vuln', label: 'Least Vulnerabilities', icon: Shield, getValue: (p) => p.vulnerability_count != null ? (100 - p.vulnerability_count) : -1, format: (v) => (100 - v).toString() },
     ],
   },
   {
@@ -80,6 +80,15 @@ const categories: Category[] = [
     description: 'Highest total value locked across DeFi protocols',
     subMetrics: [
       { key: 'tvl_usd', label: 'TVL (USD)', icon: DollarSign, getValue: (p) => Number(p.tvl_usd) || 0, format: (v) => v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : `$${v.toLocaleString()}` },
+    ],
+  },
+  {
+    id: 'community',
+    label: 'Community',
+    icon: Heart,
+    description: 'Largest communities by GitHub stars and social following',
+    subMetrics: [
+      { key: 'stars', label: 'GitHub Stars', icon: Star, getValue: (p) => (p as any).github_stars || 0, format: (v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toLocaleString() },
     ],
   },
   {
