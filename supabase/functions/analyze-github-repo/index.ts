@@ -298,7 +298,7 @@ Deno.serve(async (req) => {
       ? { tag: releases[0].tag_name, date: releases[0].published_at }
       : null;
 
-    // Top contributors
+    // Top contributors (from the separate per_page=5 call)
     const topContributors = contributors.slice(0, 5).map((c: any) => ({
       login: c.login,
       contributions: c.contributions,
