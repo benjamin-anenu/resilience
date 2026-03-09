@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
   Trophy, TrendingUp, Shield, Landmark, DollarSign, GitBranch,
-  GitCommit, Users, Crown, ArrowUpRight, Zap,
+  GitCommit, Users, Crown, ArrowUpRight, Zap, Star, Heart,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
