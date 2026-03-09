@@ -35,6 +35,7 @@ import BountyBoard from "./pages/BountyBoard";
 import Tools from "./pages/Tools";
 import DeployFeed from "./pages/DeployFeed";
 import Leaderboard from "./pages/Leaderboard";
+import Aegis from "./pages/Aegis";
 import NotFound from "./pages/NotFound";
 
 // Admin imports
