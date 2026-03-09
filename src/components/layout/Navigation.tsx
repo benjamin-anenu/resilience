@@ -184,6 +184,18 @@ export function Navigation() {
               LEADERBOARD
             </Link>
 
+            <Link
+              to="/aegis"
+              onClick={() => trackEvent('click', 'nav_aegis')}
+              className={cn(
+                'flex items-center gap-1 font-display text-sm font-medium tracking-wider transition-colors hover:text-foreground',
+                isActiveRoute('/aegis') ? 'text-primary' : 'text-muted-foreground',
+              )}
+            >
+              <Shield className="h-3.5 w-3.5" />
+              AEGIS
+            </Link>
+
             {navGroups.map((group) => (
               <NavDropdown key={group.label} group={group} isActive={isGroupActive(group)} />
             ))}
