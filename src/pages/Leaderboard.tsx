@@ -109,7 +109,10 @@ const medalColors = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
 function RankedList({ projects, metric }: { projects: ExplorerProject[]; metric: SubMetric }) {
   const ranked = useMemo(() => {
     return [...projects]
-      .filter((p) => metric.getValue(p) !== 0)
+      .filter((p) => {
+        const v = metric.getValue(p);
+        return v !== 0 && v !== -1; // exclude zero and unscanned (-1)
+      })
       .sort((a, b) => metric.getValue(b) - metric.getValue(a))
       .slice(0, 25);
   }, [projects, metric]);

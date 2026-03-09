@@ -360,10 +360,11 @@ Deno.serve(async (req) => {
 
     // === CONTRIBUTOR DIVERSITY (0-20 points) ===
     // Solo devs with high activity get 8 pts instead of 5
-    const contributorCount = contributors.length;
+    // contributorCount is now from Link header pagination (accurate)
     const isSoloHighActivity = contributorCount === 1 && adjustedActivity > 30;
-    if (contributorCount > 20) resilienceScore += 20;
-    else if (contributorCount > 10) resilienceScore += 17;
+    if (contributorCount > 50) resilienceScore += 20;
+    else if (contributorCount > 20) resilienceScore += 17;
+    else if (contributorCount > 10) resilienceScore += 15;
     else if (contributorCount >= 5) resilienceScore += 13;
     else if (contributorCount >= 3) resilienceScore += 10;
     else if (isSoloHighActivity) resilienceScore += 8;
