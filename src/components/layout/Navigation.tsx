@@ -299,6 +299,22 @@ export function Navigation() {
                   </Link>
                 </DrawerClose>
 
+                {/* AEGIS */}
+                <DrawerClose asChild>
+                  <Link
+                    to="/aegis"
+                    className={cn(
+                      'flex min-h-[48px] items-center gap-3 rounded-sm px-3 py-3 font-display text-sm font-medium tracking-wider transition-colors hover:bg-muted/50 touch-feedback',
+                      isActiveRoute('/aegis')
+                        ? 'border-l-2 border-primary bg-primary/5 text-primary'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <Shield className="h-4 w-4 shrink-0" />
+                    AEGIS
+                  </Link>
+                </DrawerClose>
+
                 {/* Groups */}
                 {navGroups.map((group) => (
                   <div key={group.label}>
