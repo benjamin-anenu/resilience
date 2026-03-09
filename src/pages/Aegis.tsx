@@ -1,6 +1,6 @@
 import { Layout } from '@/components/layout/Layout';
-import { SystemHealthBar, ProtocolHealthGrid, AlertFeed, CanaryStatus } from '@/components/aegis';
-import { Shield, Activity, Radio } from 'lucide-react';
+import { SystemHealthBar, ProtocolHealthGrid, AlertFeed, CanaryStatus, SubscriptionPanel } from '@/components/aegis';
+import { Shield, Activity, Radio, Bell } from 'lucide-react';
 
 export default function Aegis() {
   return (
@@ -26,6 +26,11 @@ export default function Aegis() {
             Real-time Z-score anomaly detection + cross-signal correlation.
           </p>
         </div>
+
+        {/* Wallet-Native Subscription CTA */}
+        <section className="mb-10">
+          <SubscriptionPanel />
+        </section>
 
         {/* System Health */}
         <section className="mb-10">
