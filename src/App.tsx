@@ -35,6 +35,7 @@ import BountyBoard from "./pages/BountyBoard";
 import Tools from "./pages/Tools";
 import DeployFeed from "./pages/DeployFeed";
 import Leaderboard from "./pages/Leaderboard";
+import Aegis from "./pages/Aegis";
 import NotFound from "./pages/NotFound";
 
 // Admin imports
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="/accountability/:realmAddress" element={<AccountabilityDetail />} />
               <Route path="/bounty-board" element={<BountyBoard />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/aegis" element={<Aegis />} />
               {/* Legacy redirects */}
               <Route path="/staking" element={<Navigate to="/accountability" replace />} />
               <Route path="/my-bonds" element={<Navigate to="/accountability" replace />} />

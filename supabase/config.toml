@@ -98,3 +98,12 @@ verify_jwt = false
 
 [functions.check-ecosystem-status]
 verify_jwt = false
+
+[functions.detection-engine]
+verify_jwt = false
+
+[functions.alert-router]
+verify_jwt = false
+
+[functions.canary-ingest]
+verify_jwt = false

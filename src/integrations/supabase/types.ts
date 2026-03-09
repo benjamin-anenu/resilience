@@ -167,6 +167,379 @@ export type Database = {
         }
         Relationships: []
       }
+      aegis_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_type: string
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          new_values: Json | null
+          old_values: Json | null
+          target_id: string | null
+          target_table: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          new_values?: Json | null
+          old_values?: Json | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          new_values?: Json | null
+          old_values?: Json | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      aegis_notification_log: {
+        Row: {
+          alert_id: string
+          attempt_count: number | null
+          channel: Database["public"]["Enums"]["notification_channel"]
+          destination: string
+          error_message: string | null
+          id: string
+          sent_at: string
+          status: string
+          subscriber_id: string | null
+        }
+        Insert: {
+          alert_id: string
+          attempt_count?: number | null
+          channel: Database["public"]["Enums"]["notification_channel"]
+          destination: string
+          error_message?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          subscriber_id?: string | null
+        }
+        Update: {
+          alert_id?: string
+          attempt_count?: number | null
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          destination?: string
+          error_message?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          subscriber_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aegis_notification_log_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "aegis_subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aegis_protocol_subscriptions: {
+        Row: {
+          auto_detected: boolean | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          min_severity: Database["public"]["Enums"]["alert_severity"] | null
+          protocol_id: string | null
+          subscriber_id: string | null
+          wallet_exposure: Json | null
+        }
+        Insert: {
+          auto_detected?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_severity?: Database["public"]["Enums"]["alert_severity"] | null
+          protocol_id?: string | null
+          subscriber_id?: string | null
+          wallet_exposure?: Json | null
+        }
+        Update: {
+          auto_detected?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_severity?: Database["public"]["Enums"]["alert_severity"] | null
+          protocol_id?: string | null
+          subscriber_id?: string | null
+          wallet_exposure?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aegis_protocol_subscriptions_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aegis_protocol_subscriptions_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "v_protocol_health"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aegis_protocol_subscriptions_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "aegis_subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aegis_subscribers: {
+        Row: {
+          created_at: string | null
+          digest_mode: boolean | null
+          email: string | null
+          global_min_severity:
+            | Database["public"]["Enums"]["alert_severity"]
+            | null
+          id: string
+          is_active: boolean | null
+          nickname: string | null
+          updated_at: string | null
+          wallet_address: string | null
+          wallet_last_scanned_at: string | null
+          x_user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          digest_mode?: boolean | null
+          email?: string | null
+          global_min_severity?:
+            | Database["public"]["Enums"]["alert_severity"]
+            | null
+          id?: string
+          is_active?: boolean | null
+          nickname?: string | null
+          updated_at?: string | null
+          wallet_address?: string | null
+          wallet_last_scanned_at?: string | null
+          x_user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          digest_mode?: boolean | null
+          email?: string | null
+          global_min_severity?:
+            | Database["public"]["Enums"]["alert_severity"]
+            | null
+          id?: string
+          is_active?: boolean | null
+          nickname?: string | null
+          updated_at?: string | null
+          wallet_address?: string | null
+          wallet_last_scanned_at?: string | null
+          x_user_id?: string | null
+        }
+        Relationships: []
+      }
+      aegis_subscription_channels: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          config: Json | null
+          created_at: string | null
+          destination: string
+          id: string
+          is_active: boolean | null
+          is_verified: boolean | null
+          min_severity: Database["public"]["Enums"]["alert_severity"] | null
+          subscriber_id: string | null
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          config?: Json | null
+          created_at?: string | null
+          destination: string
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          min_severity?: Database["public"]["Enums"]["alert_severity"] | null
+          subscriber_id?: string | null
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          config?: Json | null
+          created_at?: string | null
+          destination?: string
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          min_severity?: Database["public"]["Enums"]["alert_severity"] | null
+          subscriber_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aegis_subscription_channels_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "aegis_subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aegis_system_health: {
+        Row: {
+          component: string
+          error_message: string | null
+          id: string
+          last_run_at: string | null
+          last_success_at: string | null
+          metrics: Json | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          component: string
+          error_message?: string | null
+          id?: string
+          last_run_at?: string | null
+          last_success_at?: string | null
+          metrics?: Json | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          component?: string
+          error_message?: string | null
+          id?: string
+          last_run_at?: string | null
+          last_success_at?: string | null
+          metrics?: Json | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      alert_dedup: {
+        Row: {
+          alert_id: string
+          created_at: string | null
+          dedup_key: string
+          expires_at: string
+        }
+        Insert: {
+          alert_id: string
+          created_at?: string | null
+          dedup_key: string
+          expires_at: string
+        }
+        Update: {
+          alert_id?: string
+          created_at?: string | null
+          dedup_key?: string
+          expires_at?: string
+        }
+        Relationships: []
+      }
+      alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          affected_protocols: string[] | null
+          description: string
+          fired_at: string
+          id: string
+          onchain_signature: string | null
+          pattern_id: string | null
+          protocol_id: string | null
+          resolved_at: string | null
+          rule_id: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          signal_snapshot: Json
+          status: Database["public"]["Enums"]["alert_status"] | null
+          subscriber_count: number | null
+          title: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          affected_protocols?: string[] | null
+          description: string
+          fired_at?: string
+          id?: string
+          onchain_signature?: string | null
+          pattern_id?: string | null
+          protocol_id?: string | null
+          resolved_at?: string | null
+          rule_id?: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          signal_snapshot: Json
+          status?: Database["public"]["Enums"]["alert_status"] | null
+          subscriber_count?: number | null
+          title: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          affected_protocols?: string[] | null
+          description?: string
+          fired_at?: string
+          id?: string
+          onchain_signature?: string | null
+          pattern_id?: string | null
+          protocol_id?: string | null
+          resolved_at?: string | null
+          rule_id?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          signal_snapshot?: Json
+          status?: Database["public"]["Enums"]["alert_status"] | null
+          subscriber_count?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "correlation_patterns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "v_protocol_health"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "detection_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bonds: {
         Row: {
           created_at: string
@@ -321,6 +694,184 @@ export type Database = {
           x_username?: string | null
         }
         Relationships: []
+      }
+      canary_consensus: {
+        Row: {
+          alert_triggered: boolean | null
+          avg_latency_ms: number | null
+          consensus_reached: boolean | null
+          created_at: string | null
+          failure_count: number
+          failure_rate: number
+          id: string
+          probe_name: string
+          protocol_id: string | null
+          total_reports: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          alert_triggered?: boolean | null
+          avg_latency_ms?: number | null
+          consensus_reached?: boolean | null
+          created_at?: string | null
+          failure_count: number
+          failure_rate: number
+          id?: string
+          probe_name: string
+          protocol_id?: string | null
+          total_reports: number
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          alert_triggered?: boolean | null
+          avg_latency_ms?: number | null
+          consensus_reached?: boolean | null
+          created_at?: string | null
+          failure_count?: number
+          failure_rate?: number
+          id?: string
+          probe_name?: string
+          protocol_id?: string | null
+          total_reports?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canary_consensus_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canary_consensus_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "v_protocol_health"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canary_nodes: {
+        Row: {
+          accurate_reports: number | null
+          api_key_hash: string
+          banned_reason: string | null
+          false_reports: number | null
+          geographic_region: string | null
+          id: string
+          last_seen_at: string | null
+          metadata: Json | null
+          node_id: string
+          registered_at: string | null
+          reputation_score: number | null
+          status: Database["public"]["Enums"]["canary_status"] | null
+          total_reports: number | null
+          version: string | null
+          wallet_address: string
+        }
+        Insert: {
+          accurate_reports?: number | null
+          api_key_hash: string
+          banned_reason?: string | null
+          false_reports?: number | null
+          geographic_region?: string | null
+          id?: string
+          last_seen_at?: string | null
+          metadata?: Json | null
+          node_id: string
+          registered_at?: string | null
+          reputation_score?: number | null
+          status?: Database["public"]["Enums"]["canary_status"] | null
+          total_reports?: number | null
+          version?: string | null
+          wallet_address: string
+        }
+        Update: {
+          accurate_reports?: number | null
+          api_key_hash?: string
+          banned_reason?: string | null
+          false_reports?: number | null
+          geographic_region?: string | null
+          id?: string
+          last_seen_at?: string | null
+          metadata?: Json | null
+          node_id?: string
+          registered_at?: string | null
+          reputation_score?: number | null
+          status?: Database["public"]["Enums"]["canary_status"] | null
+          total_reports?: number | null
+          version?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      canary_reports: {
+        Row: {
+          canary_id: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          latency_ms: number | null
+          probe_name: string
+          protocol_id: string | null
+          raw_result: Json | null
+          reported_at: string
+          signature: string
+          success: boolean
+        }
+        Insert: {
+          canary_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          probe_name: string
+          protocol_id?: string | null
+          raw_result?: Json | null
+          reported_at?: string
+          signature: string
+          success: boolean
+        }
+        Update: {
+          canary_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          probe_name?: string
+          protocol_id?: string | null
+          raw_result?: Json | null
+          reported_at?: string
+          signature?: string
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canary_reports_canary_id_fkey"
+            columns: ["canary_id"]
+            isOneToOne: false
+            referencedRelation: "canary_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canary_reports_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canary_reports_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "v_protocol_health"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_conversations: {
         Row: {
@@ -752,6 +1303,48 @@ export type Database = {
           },
         ]
       }
+      correlation_patterns: {
+        Row: {
+          created_at: string | null
+          description: string
+          fire_count: number | null
+          id: string
+          is_active: boolean | null
+          min_signals_match: number | null
+          name: string
+          severity: Database["public"]["Enums"]["alert_severity"]
+          signals_required: Json
+          time_window_seconds: number | null
+          true_positive_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          fire_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          min_signals_match?: number | null
+          name: string
+          severity: Database["public"]["Enums"]["alert_severity"]
+          signals_required: Json
+          time_window_seconds?: number | null
+          true_positive_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          fire_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          min_signals_match?: number | null
+          name?: string
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          signals_required?: Json
+          time_window_seconds?: number | null
+          true_positive_count?: number | null
+        }
+        Relationships: []
+      }
       dependency_graph: {
         Row: {
           analyzed_at: string | null
@@ -817,6 +1410,75 @@ export type Database = {
             columns: ["source_profile_id"]
             isOneToOne: false
             referencedRelation: "claimed_profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detection_rules: {
+        Row: {
+          category: Database["public"]["Enums"]["protocol_category"] | null
+          cooldown_seconds: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          min_occurrences: number | null
+          name: string
+          protocol_id: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          signal_type: Database["public"]["Enums"]["signal_type"]
+          threshold_pct: number | null
+          threshold_value: number | null
+          updated_at: string | null
+          window_seconds: number | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["protocol_category"] | null
+          cooldown_seconds?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_occurrences?: number | null
+          name: string
+          protocol_id?: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          signal_type: Database["public"]["Enums"]["signal_type"]
+          threshold_pct?: number | null
+          threshold_value?: number | null
+          updated_at?: string | null
+          window_seconds?: number | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["protocol_category"] | null
+          cooldown_seconds?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_occurrences?: number | null
+          name?: string
+          protocol_id?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          signal_type?: Database["public"]["Enums"]["signal_type"]
+          threshold_pct?: number | null
+          threshold_value?: number | null
+          updated_at?: string | null
+          window_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detection_rules_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detection_rules_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "v_protocol_health"
             referencedColumns: ["id"]
           },
         ]
@@ -1188,6 +1850,54 @@ export type Database = {
         }
         Relationships: []
       }
+      protocols: {
+        Row: {
+          category: Database["public"]["Enums"]["protocol_category"]
+          created_at: string | null
+          defillama_slug: string | null
+          helius_filters: Json | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          monitoring_config: Json | null
+          name: string
+          program_address: string | null
+          slug: string
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["protocol_category"]
+          created_at?: string | null
+          defillama_slug?: string | null
+          helius_filters?: Json | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          monitoring_config?: Json | null
+          name: string
+          program_address?: string | null
+          slug: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["protocol_category"]
+          created_at?: string | null
+          defillama_slug?: string | null
+          helius_filters?: Json | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          monitoring_config?: Json | null
+          name?: string
+          program_address?: string | null
+          slug?: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       score_history: {
         Row: {
           breakdown: Json | null
@@ -1242,6 +1952,114 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signal_baselines: {
+        Row: {
+          id: string
+          last_updated: string | null
+          mean_1h: number | null
+          mean_24h: number | null
+          mean_7d: number | null
+          protocol_id: string | null
+          sample_count: number | null
+          signal_type: Database["public"]["Enums"]["signal_type"]
+          stddev_1h: number | null
+          stddev_24h: number | null
+          stddev_7d: number | null
+        }
+        Insert: {
+          id?: string
+          last_updated?: string | null
+          mean_1h?: number | null
+          mean_24h?: number | null
+          mean_7d?: number | null
+          protocol_id?: string | null
+          sample_count?: number | null
+          signal_type: Database["public"]["Enums"]["signal_type"]
+          stddev_1h?: number | null
+          stddev_24h?: number | null
+          stddev_7d?: number | null
+        }
+        Update: {
+          id?: string
+          last_updated?: string | null
+          mean_1h?: number | null
+          mean_24h?: number | null
+          mean_7d?: number | null
+          protocol_id?: string | null
+          sample_count?: number | null
+          signal_type?: Database["public"]["Enums"]["signal_type"]
+          stddev_1h?: number | null
+          stddev_24h?: number | null
+          stddev_7d?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_baselines_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signal_baselines_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "v_protocol_health"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signals: {
+        Row: {
+          baseline: number | null
+          id: string
+          metadata: Json | null
+          protocol_id: string | null
+          recorded_at: string
+          signal_type: Database["public"]["Enums"]["signal_type"]
+          source: string
+          value: number
+          zscore: number | null
+        }
+        Insert: {
+          baseline?: number | null
+          id?: string
+          metadata?: Json | null
+          protocol_id?: string | null
+          recorded_at?: string
+          signal_type: Database["public"]["Enums"]["signal_type"]
+          source: string
+          value: number
+          zscore?: number | null
+        }
+        Update: {
+          baseline?: number | null
+          id?: string
+          metadata?: Json | null
+          protocol_id?: string | null
+          recorded_at?: string
+          signal_type?: Database["public"]["Enums"]["signal_type"]
+          source?: string
+          value?: number
+          zscore?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signals_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signals_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "v_protocol_health"
             referencedColumns: ["id"]
           },
         ]
@@ -1567,8 +2385,65 @@ export type Database = {
           },
         ]
       }
+      v_active_alerts: {
+        Row: {
+          description: string | null
+          fired_at: string | null
+          id: string | null
+          logo_url: string | null
+          protocol_category:
+            | Database["public"]["Enums"]["protocol_category"]
+            | null
+          protocol_name: string | null
+          protocol_slug: string | null
+          severity: Database["public"]["Enums"]["alert_severity"] | null
+          signal_snapshot: Json | null
+          status: Database["public"]["Enums"]["alert_status"] | null
+          subscriber_count: number | null
+          title: string | null
+        }
+        Relationships: []
+      }
+      v_protocol_health: {
+        Row: {
+          active_p1: number | null
+          active_p2: number | null
+          active_p3: number | null
+          canary_failures_1h: number | null
+          category: Database["public"]["Enums"]["protocol_category"] | null
+          id: string | null
+          last_alert_at: string | null
+          logo_url: string | null
+          name: string | null
+          program_address: string | null
+          slug: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      clean_expired_dedup: { Args: never; Returns: undefined }
+      compute_zscore: {
+        Args: {
+          p_protocol_id: string
+          p_signal_type: Database["public"]["Enums"]["signal_type"]
+          p_value: number
+          p_window?: string
+        }
+        Returns: number
+      }
+      get_alert_subscribers: {
+        Args: {
+          p_protocol_id: string
+          p_severity: Database["public"]["Enums"]["alert_severity"]
+        }
+        Returns: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          config: Json
+          destination: string
+          subscriber_id: string
+        }[]
+      }
       get_score_changes: {
         Args: { profile_ids: string[] }
         Returns: {
@@ -1576,10 +2451,49 @@ export type Database = {
           profile_id: string
         }[]
       }
+      is_alert_deduped: {
+        Args: { p_protocol_id: string; p_rule_id: string }
+        Returns: boolean
+      }
       snapshot_date_day: { Args: { ts: string }; Returns: string }
     }
     Enums: {
+      alert_severity: "P1" | "P2" | "P3" | "INFO"
+      alert_status: "FIRING" | "RESOLVED" | "SUPPRESSED" | "ACKNOWLEDGED"
+      canary_status: "ACTIVE" | "SUSPENDED" | "BANNED" | "PENDING"
       liveness_status: "ACTIVE" | "STALE" | "DECAYING"
+      notification_channel:
+        | "TELEGRAM"
+        | "DISCORD"
+        | "EMAIL"
+        | "WEBHOOK"
+        | "PUSH"
+        | "ONCHAIN"
+        | "SMS"
+      protocol_category:
+        | "DEX"
+        | "BRIDGE"
+        | "ORACLE"
+        | "VALIDATOR"
+        | "RPC"
+        | "LENDING"
+        | "LIQUID_STAKING"
+        | "LAUNCHPAD"
+        | "INFRASTRUCTURE"
+      signal_type:
+        | "TVL_DROP"
+        | "ORACLE_DEVIATION"
+        | "ORACLE_STALENESS"
+        | "VALIDATOR_SKIP_RATE"
+        | "SLOT_LAG"
+        | "LIQUIDITY_DRAIN"
+        | "BRIDGE_IMBALANCE"
+        | "TX_FAILURE_SPIKE"
+        | "STAKE_SHIFT"
+        | "PRICE_IMPACT_INCREASE"
+        | "CANARY_PROBE_FAILURE"
+        | "CROSS_SIGNAL_CORRELATION"
+        | "RPC_LATENCY_SPIKE"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1707,7 +2621,45 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_severity: ["P1", "P2", "P3", "INFO"],
+      alert_status: ["FIRING", "RESOLVED", "SUPPRESSED", "ACKNOWLEDGED"],
+      canary_status: ["ACTIVE", "SUSPENDED", "BANNED", "PENDING"],
       liveness_status: ["ACTIVE", "STALE", "DECAYING"],
+      notification_channel: [
+        "TELEGRAM",
+        "DISCORD",
+        "EMAIL",
+        "WEBHOOK",
+        "PUSH",
+        "ONCHAIN",
+        "SMS",
+      ],
+      protocol_category: [
+        "DEX",
+        "BRIDGE",
+        "ORACLE",
+        "VALIDATOR",
+        "RPC",
+        "LENDING",
+        "LIQUID_STAKING",
+        "LAUNCHPAD",
+        "INFRASTRUCTURE",
+      ],
+      signal_type: [
+        "TVL_DROP",
+        "ORACLE_DEVIATION",
+        "ORACLE_STALENESS",
+        "VALIDATOR_SKIP_RATE",
+        "SLOT_LAG",
+        "LIQUIDITY_DRAIN",
+        "BRIDGE_IMBALANCE",
+        "TX_FAILURE_SPIKE",
+        "STAKE_SHIFT",
+        "PRICE_IMPACT_INCREASE",
+        "CANARY_PROBE_FAILURE",
+        "CROSS_SIGNAL_CORRELATION",
+        "RPC_LATENCY_SPIKE",
+      ],
     },
   },
 } as const

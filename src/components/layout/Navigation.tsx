@@ -5,7 +5,7 @@ import {
   Compass, GitBranch, Coins, Rocket, Gift,
   Activity, Globe, MessageCircle,
   Target, FolderKanban,
-  BookOpen, Layers, BookA, Trophy,
+  BookOpen, Layers, BookA, Trophy, Shield,
 } from 'lucide-react';
 import { useAnalyticsTracker } from '@/hooks/useAnalyticsTracker';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -182,6 +182,18 @@ export function Navigation() {
             >
               <Trophy className="h-3.5 w-3.5" />
               LEADERBOARD
+            </Link>
+
+            <Link
+              to="/aegis"
+              onClick={() => trackEvent('click', 'nav_aegis')}
+              className={cn(
+                'flex items-center gap-1 font-display text-sm font-medium tracking-wider transition-colors hover:text-foreground',
+                isActiveRoute('/aegis') ? 'text-primary' : 'text-muted-foreground',
+              )}
+            >
+              <Shield className="h-3.5 w-3.5" />
+              AEGIS
             </Link>
 
             {navGroups.map((group) => (
