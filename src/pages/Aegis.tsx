@@ -27,6 +27,11 @@ export default function Aegis() {
           </p>
         </div>
 
+        {/* Wallet-Native Subscription CTA */}
+        <section className="mb-10">
+          <SubscriptionPanel />
+        </section>
+
         {/* System Health */}
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
