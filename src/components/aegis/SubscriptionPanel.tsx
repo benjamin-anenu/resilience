@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -24,8 +23,24 @@ interface DetectedPosition {
 
 type Step = 'connect' | 'scanning' | 'configure' | 'done';
 
+/**
+ * Build a structured message for wallet signature verification.
+ * The edge function verifies: wallet match, timestamp freshness, Ed25519 sig.
+ */
+function buildSignMessage(walletAddress: string, action: string): string {
+  return [
+    'Aegis Alert Subscription',
+    '',
+    `Action: ${action}`,
+    `Wallet: ${walletAddress}`,
+    `Timestamp: ${new Date().toISOString()}`,
+    '',
+    'This signature does not authorize any blockchain transaction.',
+  ].join('\n');
+}
+
 export function SubscriptionPanel() {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, signMessage: walletSignMessage } = useWallet();
   const [step, setStep] = useState<Step>('connect');
   const [positions, setPositions] = useState<DetectedPosition[]>([]);
   const [selectedProtocols, setSelectedProtocols] = useState<Set<string>>(new Set());
@@ -38,11 +53,37 @@ export function SubscriptionPanel() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [existingSubscriber, setExistingSubscriber] = useState<any>(null);
 
+  /**
+   * Sign a message with the connected wallet and return base64 signature + message.
+   */
+  const signForAction = useCallback(async (action: string): Promise<{ signature: string; signed_message: string } | null> => {
+    if (!publicKey || !walletSignMessage) {
+      toast.error('Wallet does not support message signing');
+      return null;
+    }
+    try {
+      const message = buildSignMessage(publicKey.toBase58(), action);
+      const messageBytes = new TextEncoder().encode(message);
+      const signatureBytes = await walletSignMessage(messageBytes);
+      // Convert to base64 for transport
+      const signature = btoa(String.fromCharCode(...signatureBytes));
+      return { signature, signed_message: message };
+    } catch (err) {
+      if (err instanceof Error && (err.message.includes('rejected') || err.message.includes('User rejected'))) {
+        toast.error('Signature rejected — please approve to continue');
+      } else {
+        toast.error('Failed to sign message');
+      }
+      return null;
+    }
+  }, [publicKey, walletSignMessage]);
+
   const scanWallet = useCallback(async () => {
     if (!publicKey) return;
     setStep('scanning');
 
     try {
+      // Scan is read-only, no signature needed
       const { data, error } = await supabase.functions.invoke('manage-aegis-subscriptions', {
         body: { action: 'scan', wallet_address: publicKey.toBase58() },
       });
@@ -75,12 +116,18 @@ export function SubscriptionPanel() {
       return;
     }
 
+    // Request wallet signature before subscribing
+    const auth = await signForAction('subscribe');
+    if (!auth) return;
+
     setSubscribing(true);
     try {
       const { data, error } = await supabase.functions.invoke('manage-aegis-subscriptions', {
         body: {
           action: 'subscribe',
           wallet_address: publicKey.toBase58(),
+          signature: auth.signature,
+          signed_message: auth.signed_message,
           nickname: nickname || undefined,
           telegram_chat_id: telegramChatId || undefined,
           discord_webhook: discordWebhook || undefined,
@@ -90,12 +137,13 @@ export function SubscriptionPanel() {
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast.success(`Subscribed to ${data.protocols_subscribed} protocols!`);
       setStep('done');
     } catch (e) {
       console.error('Subscribe error:', e);
-      toast.error('Subscription failed');
+      toast.error(e instanceof Error ? e.message : 'Subscription failed');
     } finally {
       setSubscribing(false);
     }
@@ -312,6 +360,13 @@ export function SubscriptionPanel() {
               </div>
             )}
 
+            {/* Auth notice */}
+            <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5">
+              <p className="text-[10px] text-amber-400 font-mono">
+                🔐 You'll be asked to sign a message to prove wallet ownership. No transaction will be submitted.
+              </p>
+            </div>
+
             {/* Subscribe Button */}
             <Button
               onClick={handleSubscribe}
@@ -326,7 +381,7 @@ export function SubscriptionPanel() {
               )}
               {subscribing
                 ? 'Subscribing...'
-                : `Subscribe to ${selectedProtocols.size} Protocol${selectedProtocols.size !== 1 ? 's' : ''}`}
+                : `Sign & Subscribe to ${selectedProtocols.size} Protocol${selectedProtocols.size !== 1 ? 's' : ''}`}
             </Button>
           </>
         )}

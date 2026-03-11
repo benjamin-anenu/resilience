@@ -1,6 +1,6 @@
 // ============================================================
 // AEGIS — SUBSCRIPTION MANAGER (Edge Function)
-// Wallet-native subscriptions: scan positions → auto-subscribe
+// Wallet-native subscriptions with Ed25519 signature verification
 // ============================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -12,19 +12,12 @@ const corsHeaders = {
 
 // Known token mints → protocol slugs (Solana mainnet)
 const TOKEN_TO_PROTOCOL: Record<string, string> = {
-  // Raydium
   "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R": "raydium",
-  // Orca
   "orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE": "orca",
-  // Jupiter
   "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN": "jupiter",
-  // Marinade (mSOL)
   "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So": "marinade",
-  // Jito (jitoSOL)
   "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn": "jito",
-  // Pyth
   "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3": "pyth",
-  // Drift
   "DriFtupJYLTosbwoN8koMbEYSx54aFAVLddWsbksjwg7": "drift",
 };
 
@@ -40,10 +33,91 @@ const PROGRAM_TO_PROTOCOL: Record<string, string> = {
   "wormDTUJ6AWPNvk59vGQbDvGJmqbDTdgWgAqcLBCgUb": "wormhole",
 };
 
+// ── Ed25519 Verification Helpers ─────────────────────────────
+
+function base58Decode(str: string): Uint8Array {
+  const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  const ALPHABET_MAP = new Map(ALPHABET.split("").map((c, i) => [c, BigInt(i)]));
+  let num = BigInt(0);
+  for (const char of str) {
+    const val = ALPHABET_MAP.get(char);
+    if (val === undefined) throw new Error(`Invalid base58 char: ${char}`);
+    num = num * BigInt(58) + val;
+  }
+  const hex = num.toString(16).padStart(64, "0");
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+  return bytes;
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const binStr = atob(b64);
+  const bytes = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+  return bytes;
+}
+
+async function verifyWalletSignature(
+  walletAddress: string,
+  message: string,
+  signatureBase64: string,
+  maxAgeSeconds = 300
+): Promise<{ valid: boolean; error?: string }> {
+  try {
+    // 1. Verify message structure
+    const lines = message.split('\n');
+    const walletLine = lines.find(l => l.startsWith('Wallet: '));
+    const timestampLine = lines.find(l => l.startsWith('Timestamp: '));
+    const actionLine = lines.find(l => l.startsWith('Action: '));
+
+    if (!walletLine || !timestampLine || !actionLine) {
+      return { valid: false, error: "Invalid message structure" };
+    }
+
+    // 2. Verify wallet in message matches claimed wallet
+    const messageWallet = walletLine.replace('Wallet: ', '');
+    if (messageWallet !== walletAddress) {
+      return { valid: false, error: "Wallet address mismatch" };
+    }
+
+    // 3. Verify timestamp is recent (prevent replay attacks)
+    const timestamp = timestampLine.replace('Timestamp: ', '');
+    const msgTime = new Date(timestamp).getTime();
+    const now = Date.now();
+    if (isNaN(msgTime) || Math.abs(now - msgTime) > maxAgeSeconds * 1000) {
+      return { valid: false, error: "Signature expired or timestamp invalid" };
+    }
+
+    // 4. Verify Ed25519 signature
+    const msgBytes = new TextEncoder().encode(message);
+    const sigBytes = base64ToBytes(signatureBase64);
+    const pubKeyBytes = base58Decode(walletAddress);
+
+    const pubKey = await crypto.subtle.importKey(
+      "raw", pubKeyBytes, { name: "Ed25519" } as any, false, ["verify"]
+    );
+    const isValid = await crypto.subtle.verify(
+      "Ed25519" as any, pubKey, sigBytes, msgBytes
+    );
+
+    if (!isValid) {
+      return { valid: false, error: "Signature verification failed" };
+    }
+
+    return { valid: true };
+  } catch (e) {
+    return { valid: false, error: `Verification error: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+// ── Request Types ────────────────────────────────────────────
+
 interface ManageRequest {
   action: "scan" | "subscribe" | "unsubscribe" | "get_subscriptions";
   wallet_address?: string;
-  subscriber_id?: string;
+  // Auth fields (required for subscribe/unsubscribe/get_subscriptions)
+  signature?: string;
+  signed_message?: string;
   // For subscribe action
   nickname?: string;
   telegram_chat_id?: string;
@@ -63,15 +137,16 @@ interface DetectedPosition {
   details: string;
 }
 
+// ── Wallet Position Scanner ──────────────────────────────────
+
 async function scanWalletPositions(walletAddress: string, supabase: any): Promise<DetectedPosition[]> {
   const positions: DetectedPosition[] = [];
   const foundSlugs = new Set<string>();
 
-  // Fetch protocols from DB for slug → id mapping
   const { data: protocols } = await supabase.from("protocols").select("id, slug, name").eq("is_active", true);
   const slugToProtocol = new Map(protocols?.map((p: any) => [p.slug, p]) || []);
 
-  // 1. Scan token accounts via Solana RPC (free public endpoint)
+  // 1. Scan token accounts
   try {
     const rpcUrl = Deno.env.get("RPC_URL") || "https://api.mainnet-beta.solana.com";
     const tokenRes = await fetch(rpcUrl, {
@@ -104,8 +179,8 @@ async function scanWalletPositions(walletAddress: string, supabase: any): Promis
             foundSlugs.add(slug);
             positions.push({
               protocol_slug: slug,
-              protocol_name: (proto as any).name,
-              protocol_id: (proto as any).id,
+              protocol_name: proto.name,
+              protocol_id: proto.id,
               source: "token",
               details: `Holds ${amount.toLocaleString()} ${slug.toUpperCase()} tokens`,
             });
@@ -117,7 +192,7 @@ async function scanWalletPositions(walletAddress: string, supabase: any): Promis
     console.error("Token scan error:", e);
   }
 
-  // 2. Check recent transaction history for program interactions
+  // 2. Check recent transaction history
   try {
     const rpcUrl = Deno.env.get("RPC_URL") || "https://api.mainnet-beta.solana.com";
     const txRes = await fetch(rpcUrl, {
@@ -132,7 +207,6 @@ async function scanWalletPositions(walletAddress: string, supabase: any): Promis
     const txData = await txRes.json();
 
     if (txData?.result) {
-      // Get transaction details for program interaction detection
       const sigs = txData.result.slice(0, 20).map((s: any) => s.signature);
       for (const sig of sigs) {
         try {
@@ -158,10 +232,10 @@ async function scanWalletPositions(walletAddress: string, supabase: any): Promis
                 foundSlugs.add(slug);
                 positions.push({
                   protocol_slug: slug,
-                  protocol_name: (proto as any).name,
-                  protocol_id: (proto as any).id,
+                  protocol_name: proto.name,
+                  protocol_id: proto.id,
                   source: "program_interaction",
-                  details: `Recent interaction with ${(proto as any).name}`,
+                  details: `Recent interaction with ${proto.name}`,
                 });
               }
             }
@@ -173,15 +247,15 @@ async function scanWalletPositions(walletAddress: string, supabase: any): Promis
     console.error("Transaction scan error:", e);
   }
 
-  // 3. Always suggest critical infrastructure protocols
+  // 3. Suggest critical infrastructure
   for (const infra of ["solana-validators", "wormhole"]) {
     if (!foundSlugs.has(infra)) {
       const proto = slugToProtocol.get(infra);
       if (proto) {
         positions.push({
           protocol_slug: infra,
-          protocol_name: (proto as any).name,
-          protocol_id: (proto as any).id,
+          protocol_name: proto.name,
+          protocol_id: proto.id,
           source: "program_interaction",
           details: "Critical infrastructure — recommended",
         });
@@ -191,6 +265,8 @@ async function scanWalletPositions(walletAddress: string, supabase: any): Promis
 
   return positions;
 }
+
+// ── Main Handler ─────────────────────────────────────────────
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -205,7 +281,29 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     const body: ManageRequest = await req.json();
 
-    // ── SCAN: Detect wallet positions ──
+    // ── Helper: verify wallet ownership ──
+    async function requireAuth(walletAddress: string): Promise<Response | null> {
+      if (!body.signature || !body.signed_message) {
+        return new Response(JSON.stringify({ error: "Wallet signature required. Please sign the authentication message." }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const result = await verifyWalletSignature(walletAddress, body.signed_message, body.signature);
+      if (!result.valid) {
+        // Audit log the failed attempt
+        await supabase.from("aegis_audit_log").insert({
+          actor_type: "user",
+          action: "subscription_auth_failed",
+          new_values: { wallet_address: walletAddress, error: result.error, attempted_action: body.action },
+        });
+        return new Response(JSON.stringify({ error: result.error || "Invalid signature" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return null; // Auth passed
+    }
+
+    // ── SCAN: No auth needed (read-only, returns public protocol data) ──
     if (body.action === "scan") {
       if (!body.wallet_address) {
         return new Response(JSON.stringify({ error: "wallet_address required" }), {
@@ -215,7 +313,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       const positions = await scanWalletPositions(body.wallet_address, supabase);
 
-      // Check if subscriber already exists
       const { data: existing } = await supabase
         .from("aegis_subscribers")
         .select("id, nickname, global_min_severity, wallet_last_scanned_at")
@@ -230,13 +327,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // ── SUBSCRIBE: Create/update subscriber + channels + protocol subscriptions ──
+    // ── SUBSCRIBE: Requires wallet signature ──
     if (body.action === "subscribe") {
       if (!body.wallet_address) {
         return new Response(JSON.stringify({ error: "wallet_address required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      const authErr = await requireAuth(body.wallet_address);
+      if (authErr) return authErr;
 
       // 1. Upsert subscriber
       const { data: subscriber, error: subErr } = await supabase
@@ -275,6 +375,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
 
       if (body.discord_webhook) {
+        // Basic Discord webhook URL validation
+        if (!body.discord_webhook.startsWith("https://discord.com/api/webhooks/") &&
+            !body.discord_webhook.startsWith("https://discordapp.com/api/webhooks/")) {
+          return new Response(JSON.stringify({ error: "Invalid Discord webhook URL" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         channels.push({
           subscriber_id: subscriberId,
           channel: "DISCORD",
@@ -296,7 +403,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
         });
       }
 
-      // Remove old channels for this subscriber, then insert new ones
       if (channels.length > 0) {
         await supabase
           .from("aegis_subscription_channels")
@@ -312,7 +418,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       // 3. Set up protocol subscriptions
       if (body.protocol_ids && body.protocol_ids.length > 0) {
-        // Remove old protocol subscriptions
         await supabase
           .from("aegis_protocol_subscriptions")
           .delete()
@@ -333,6 +438,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
         if (protoErr) console.error("Protocol sub insert error:", protoErr.message);
       }
 
+      // Audit log
+      await supabase.from("aegis_audit_log").insert({
+        actor_type: "user",
+        action: "subscription_created",
+        target_id: subscriberId,
+        target_table: "aegis_subscribers",
+        new_values: { protocols: body.protocol_ids?.length, channels: channels.length },
+      });
+
       return new Response(JSON.stringify({
         subscriber_id: subscriberId,
         channels_configured: channels.length,
@@ -342,13 +456,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // ── GET_SUBSCRIPTIONS: Fetch current subscriber state ──
+    // ── GET_SUBSCRIPTIONS: Requires wallet signature ──
     if (body.action === "get_subscriptions") {
       if (!body.wallet_address) {
         return new Response(JSON.stringify({ error: "wallet_address required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      const authErr = await requireAuth(body.wallet_address);
+      if (authErr) return authErr;
 
       const { data: subscriber } = await supabase
         .from("aegis_subscribers")
@@ -376,7 +493,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // ── UNSUBSCRIBE: Deactivate subscriber ──
+    // ── UNSUBSCRIBE: Requires wallet signature ──
     if (body.action === "unsubscribe") {
       if (!body.wallet_address) {
         return new Response(JSON.stringify({ error: "wallet_address required" }), {
@@ -384,10 +501,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
         });
       }
 
+      const authErr = await requireAuth(body.wallet_address);
+      if (authErr) return authErr;
+
       await supabase
         .from("aegis_subscribers")
         .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq("wallet_address", body.wallet_address);
+
+      await supabase.from("aegis_audit_log").insert({
+        actor_type: "user",
+        action: "subscription_deactivated",
+        new_values: { wallet_address: body.wallet_address },
+      });
 
       return new Response(JSON.stringify({ success: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
