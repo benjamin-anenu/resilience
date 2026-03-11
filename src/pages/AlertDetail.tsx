@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, AlertTriangle, Shield, Clock, Bell, ExternalLink } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { AlertTriageControls } from '@/components/aegis/AlertTriageControls';
 
 interface AlertDetail {
   id: string;
@@ -136,7 +137,15 @@ export default function AlertDetail() {
               <h1 className="text-xl font-display font-bold text-foreground">{alert.title}</h1>
               <p className="text-sm text-muted-foreground mt-1">{alert.description}</p>
             </div>
-            <AlertTriangle className={cn('h-8 w-8 shrink-0', styles.badge.includes('red') ? 'text-red-400' : 'text-amber-400')} />
+            <div className="flex items-center gap-2">
+              <AlertTriangle className={cn('h-8 w-8 shrink-0', styles.badge.includes('red') ? 'text-red-400' : 'text-amber-400')} />
+              <AlertTriageControls
+                alertId={alert.id}
+                currentStatus={alert.status}
+                currentSeverity={alert.severity}
+                onUpdated={() => window.location.reload()}
+              />
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground font-mono">

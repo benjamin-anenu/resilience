@@ -38,6 +38,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Aegis from "./pages/Aegis";
 import AlertDetail from "./pages/AlertDetail";
 import AegisRules from "./pages/AegisRules";
+import SubscriberDashboard from "./pages/SubscriberDashboard";
 import NotFound from "./pages/NotFound";
 
 // Admin imports
@@ -81,6 +82,7 @@ const App = () => (
               <Route path="/aegis" element={<Aegis />} />
               <Route path="/aegis/alert/:id" element={<AlertDetail />} />
               <Route path="/aegis/rules" element={<AegisRules />} />
+              <Route path="/aegis/subscriptions" element={<SubscriberDashboard />} />
               {/* Legacy redirects */}
               <Route path="/staking" element={<Navigate to="/accountability" replace />} />
               <Route path="/my-bonds" element={<Navigate to="/accountability" replace />} />
