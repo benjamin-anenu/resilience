@@ -157,14 +157,20 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5 block">
-                  Protocol Slug
+                  Protocol
                 </label>
-                <Input
-                  value={protocolSlug}
-                  onChange={(e) => setProtocolSlug(e.target.value)}
-                  placeholder="e.g. raydium"
-                  className="font-mono text-xs h-9"
-                />
+                <Select value={protocolSlug} onValueChange={setProtocolSlug}>
+                  <SelectTrigger className="text-xs h-9">
+                    <SelectValue placeholder="Select protocol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {protocols.map((p) => (
+                      <SelectItem key={p.slug} value={p.slug}>
+                        <span className="text-xs">{p.name}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
