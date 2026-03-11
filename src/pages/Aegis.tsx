@@ -1,6 +1,15 @@
 import { Layout } from '@/components/layout/Layout';
-import { SystemHealthBar, ProtocolHealthGrid, AlertFeed, CanaryStatus, SubscriptionPanel } from '@/components/aegis';
-import { Shield, Activity, Radio, Bell } from 'lucide-react';
+import {
+  SystemHealthBar,
+  ProtocolHealthGrid,
+  AlertFeed,
+  CanaryStatus,
+  SubscriptionPanel,
+  AegisStatsBar,
+  AlertSeverityChart,
+  AlertTimelineChart,
+} from '@/components/aegis';
+import { Shield, Activity, Radio, BarChart3 } from 'lucide-react';
 
 export default function Aegis() {
   return (
@@ -27,6 +36,11 @@ export default function Aegis() {
           </p>
         </div>
 
+        {/* Key Metrics */}
+        <section className="mb-10">
+          <AegisStatsBar />
+        </section>
+
         {/* Wallet-Native Subscription CTA */}
         <section className="mb-10">
           <SubscriptionPanel />
@@ -43,6 +57,22 @@ export default function Aegis() {
           <SystemHealthBar />
         </section>
 
+        {/* Analytics: Timeline + Severity */}
+        <section className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-display text-sm font-semibold tracking-wider text-muted-foreground uppercase">
+              Alert Analytics
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <AlertTimelineChart />
+            </div>
+            <AlertSeverityChart />
+          </div>
+        </section>
+
         {/* Protocol Health Grid */}
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
@@ -56,7 +86,6 @@ export default function Aegis() {
 
         {/* Two-column: Alert Feed + Canary Status */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Alert Feed — 2/3 width */}
           <section className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <Activity className="h-4 w-4 text-muted-foreground" />
@@ -71,7 +100,6 @@ export default function Aegis() {
             <AlertFeed />
           </section>
 
-          {/* Canary Network — 1/3 width */}
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Radio className="h-4 w-4 text-muted-foreground" />
