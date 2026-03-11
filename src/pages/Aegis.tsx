@@ -111,7 +111,20 @@ export default function Aegis() {
               </h2>
             </div>
             <CanaryStatus />
+            <div className="mt-4">
+              <CanaryRegistration />
+            </div>
           </section>
+        </div>
+
+        {/* Detection Rules Link */}
+        <div className="mt-10 flex justify-center">
+          <Link to="/aegis/rules">
+            <Button variant="outline" className="font-display font-semibold tracking-wider border-primary/30 hover:bg-primary/5">
+              <Zap className="mr-2 h-4 w-4" />
+              VIEW DETECTION RULES
+            </Button>
+          </Link>
         </div>
       </div>
     </Layout>
