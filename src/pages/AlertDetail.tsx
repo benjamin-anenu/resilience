@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, AlertTriangle, Shield, Clock, Bell, ExternalLink } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { AlertTriageControls } from '@/components/aegis/AlertTriageControls';
 
 interface AlertDetail {
   id: string;
