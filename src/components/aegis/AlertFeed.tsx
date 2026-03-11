@@ -27,6 +27,7 @@ const SEVERITY_STYLES: Record<string, { badge: string; border: string; icon: str
 };
 
 export function AlertFeed() {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
 
