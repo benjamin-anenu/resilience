@@ -1,0 +1,1 @@
+UPDATE canary_nodes SET status = 'ACTIVE' WHERE status = 'PENDING';
