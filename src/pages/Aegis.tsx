@@ -4,12 +4,15 @@ import {
   ProtocolHealthGrid,
   AlertFeed,
   CanaryStatus,
+  CanaryRegistration,
   SubscriptionPanel,
   AegisStatsBar,
   AlertSeverityChart,
   AlertTimelineChart,
 } from '@/components/aegis';
-import { Shield, Activity, Radio, BarChart3 } from 'lucide-react';
+import { Shield, Activity, Radio, BarChart3, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export default function Aegis() {
   return (
