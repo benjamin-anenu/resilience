@@ -134,12 +134,14 @@ async function sendNtfy(topic: string, alert: AlertPayload): Promise<{ success: 
   return { success: true };
 }
 
-const sentThisRun = new Set<string>();
-function checkLocalDedup(subscriberId: string, alertId: string): boolean {
-  const key = `${subscriberId}:${alertId}`;
-  if (sentThisRun.has(key)) return true;
-  sentThisRun.add(key);
-  return false;
+function createLocalDedup() {
+  const sentThisRun = new Set<string>();
+  return function checkLocalDedup(subscriberId: string, alertId: string): boolean {
+    const key = `${subscriberId}:${alertId}`;
+    if (sentThisRun.has(key)) return true;
+    sentThisRun.add(key);
+    return false;
+  };
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
