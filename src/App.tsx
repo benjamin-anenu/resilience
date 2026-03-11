@@ -38,6 +38,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Aegis from "./pages/Aegis";
 import AlertDetail from "./pages/AlertDetail";
 import AegisRules from "./pages/AegisRules";
+import SubscriberDashboard from "./pages/SubscriberDashboard";
 import NotFound from "./pages/NotFound";
 
 // Admin imports
