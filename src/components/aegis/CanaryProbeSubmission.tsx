@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,12 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ProbeResult | null>(null);
   const [rawResult, setRawResult] = useState('');
+  const [protocols, setProtocols] = useState<{ slug: string; name: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('protocols').select('slug, name').eq('is_active', true).order('name')
+      .then(({ data }) => { if (data) setProtocols(data); });
+  }, []);
 
   const handleSubmitProbe = async () => {
     if (!connected || !publicKey) {
@@ -151,14 +157,20 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5 block">
-                  Protocol Slug
+                  Protocol
                 </label>
-                <Input
-                  value={protocolSlug}
-                  onChange={(e) => setProtocolSlug(e.target.value)}
-                  placeholder="e.g. raydium"
-                  className="font-mono text-xs h-9"
-                />
+                <Select value={protocolSlug} onValueChange={setProtocolSlug}>
+                  <SelectTrigger className="text-xs h-9">
+                    <SelectValue placeholder="Select protocol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {protocols.map((p) => (
+                      <SelectItem key={p.slug} value={p.slug}>
+                        <span className="text-xs">{p.name}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
