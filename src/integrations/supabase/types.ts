@@ -858,6 +858,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "canary_reports_canary_id_fkey"
+            columns: ["canary_id"]
+            isOneToOne: false
+            referencedRelation: "canary_nodes_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "canary_reports_protocol_id_fkey"
             columns: ["protocol_id"]
             isOneToOne: false
@@ -2100,6 +2107,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      canary_nodes_public: {
+        Row: {
+          accurate_reports: number | null
+          false_reports: number | null
+          geographic_region: string | null
+          id: string | null
+          last_seen_at: string | null
+          node_id: string | null
+          registered_at: string | null
+          reputation_score: number | null
+          status: Database["public"]["Enums"]["canary_status"] | null
+          total_reports: number | null
+          version: string | null
+        }
+        Insert: {
+          accurate_reports?: number | null
+          false_reports?: number | null
+          geographic_region?: string | null
+          id?: string | null
+          last_seen_at?: string | null
+          node_id?: string | null
+          registered_at?: string | null
+          reputation_score?: number | null
+          status?: Database["public"]["Enums"]["canary_status"] | null
+          total_reports?: number | null
+          version?: string | null
+        }
+        Update: {
+          accurate_reports?: number | null
+          false_reports?: number | null
+          geographic_region?: string | null
+          id?: string | null
+          last_seen_at?: string | null
+          node_id?: string | null
+          registered_at?: string | null
+          reputation_score?: number | null
+          status?: Database["public"]["Enums"]["canary_status"] | null
+          total_reports?: number | null
+          version?: string | null
+        }
+        Relationships: []
       }
       claimed_profiles_public: {
         Row: {
