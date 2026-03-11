@@ -31,6 +31,12 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ProbeResult | null>(null);
   const [rawResult, setRawResult] = useState('');
+  const [protocols, setProtocols] = useState<{ slug: string; name: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('protocols').select('slug, name').eq('is_active', true).order('name')
+      .then(({ data }) => { if (data) setProtocols(data); });
+  }, []);
 
   const handleSubmitProbe = async () => {
     if (!connected || !publicKey) {
