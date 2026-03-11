@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ const SEVERITY_STYLES: Record<string, { badge: string; border: string; icon: str
 };
 
 export function AlertFeed() {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,8 +79,9 @@ export function AlertFeed() {
         return (
           <div
             key={alert.id}
+            onClick={() => navigate(`/aegis/alert/${alert.id}`)}
             className={cn(
-              'rounded-lg border border-border bg-card p-4 border-l-4 transition-colors hover:bg-card/80',
+              'rounded-lg border border-border bg-card p-4 border-l-4 transition-colors hover:bg-card/80 cursor-pointer',
               styles.border,
             )}
           >

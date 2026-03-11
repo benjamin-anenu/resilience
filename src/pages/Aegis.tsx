@@ -4,12 +4,15 @@ import {
   ProtocolHealthGrid,
   AlertFeed,
   CanaryStatus,
+  CanaryRegistration,
   SubscriptionPanel,
   AegisStatsBar,
   AlertSeverityChart,
   AlertTimelineChart,
 } from '@/components/aegis';
-import { Shield, Activity, Radio, BarChart3 } from 'lucide-react';
+import { Shield, Activity, Radio, BarChart3, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export default function Aegis() {
   return (
@@ -108,7 +111,20 @@ export default function Aegis() {
               </h2>
             </div>
             <CanaryStatus />
+            <div className="mt-4">
+              <CanaryRegistration />
+            </div>
           </section>
+        </div>
+
+        {/* Detection Rules Link */}
+        <div className="mt-10 flex justify-center">
+          <Link to="/aegis/rules">
+            <Button variant="outline" className="font-display font-semibold tracking-wider border-primary/30 hover:bg-primary/5">
+              <Zap className="mr-2 h-4 w-4" />
+              VIEW DETECTION RULES
+            </Button>
+          </Link>
         </div>
       </div>
     </Layout>

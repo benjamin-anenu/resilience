@@ -220,13 +220,60 @@ Deno.serve(async (req: Request): Promise<Response> => {
     await supabase.from("aegis_notification_log").insert(notifLogs.map((l) => ({ ...l, sent_at: new Date().toISOString() })));
   }
 
+  // On-Chain Receipt — write a Solana memo transaction as tamper-proof proof
+  let onchainSignature: string | null = null;
+  try {
+    const rpcUrl = Deno.env.get("RPC_URL");
+    if (rpcUrl && (alert.severity === "P1" || alert.severity === "P2")) {
+      const memoData = JSON.stringify({
+        aegis: "1.0",
+        alert_id: alert.alert_id,
+        severity: alert.severity,
+        title: alert.title.slice(0, 64),
+        ts: new Date().toISOString(),
+      });
+
+      // Use Solana Memo program to store alert receipt on-chain
+      // We import @solana/web3.js for edge function usage
+      const { Connection, Keypair, Transaction, TransactionInstruction, PublicKey, sendAndConfirmTransaction } = await import("https://esm.sh/@solana/web3.js@1.98.0");
+
+      const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+
+      // The alert-router uses a service keypair stored as a secret
+      const keypairSecret = Deno.env.get("AEGIS_ONCHAIN_KEYPAIR");
+      if (keypairSecret) {
+        const secretKey = Uint8Array.from(JSON.parse(keypairSecret));
+        const payer = Keypair.fromSecretKey(secretKey);
+        const connection = new Connection(rpcUrl, "confirmed");
+
+        const tx = new Transaction().add(
+          new TransactionInstruction({
+            keys: [],
+            programId: MEMO_PROGRAM_ID,
+            data: new TextEncoder().encode(memoData),
+          })
+        );
+
+        onchainSignature = await sendAndConfirmTransaction(connection, tx, [payer], {
+          commitment: "confirmed",
+          maxRetries: 2,
+        });
+
+        // Store the signature on the alert record
+        await supabase.from("alerts").update({ onchain_signature: onchainSignature }).eq("id", alert.alert_id);
+      }
+    }
+  } catch (e) {
+    console.error("On-chain receipt failed (non-blocking):", e instanceof Error ? e.message : e);
+  }
+
   await supabase.from("aegis_system_health").update({
     status: "healthy", last_success_at: new Date().toISOString(),
-    metrics: { last_alert_id: alert.alert_id, sent, failed, deduped },
+    metrics: { last_alert_id: alert.alert_id, sent, failed, deduped, onchain_signature: onchainSignature },
     updated_at: new Date().toISOString(),
   }).eq("component", "notification");
 
-  return new Response(JSON.stringify({ sent, failed, deduped, total: subscribers.length }), {
+  return new Response(JSON.stringify({ sent, failed, deduped, total: subscribers.length, onchain_signature: onchainSignature }), {
     status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

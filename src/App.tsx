@@ -36,6 +36,8 @@ import Tools from "./pages/Tools";
 import DeployFeed from "./pages/DeployFeed";
 import Leaderboard from "./pages/Leaderboard";
 import Aegis from "./pages/Aegis";
+import AlertDetail from "./pages/AlertDetail";
+import AegisRules from "./pages/AegisRules";
 import NotFound from "./pages/NotFound";
 
 // Admin imports
@@ -77,6 +79,8 @@ const App = () => (
               <Route path="/bounty-board" element={<BountyBoard />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/aegis" element={<Aegis />} />
+              <Route path="/aegis/alert/:id" element={<AlertDetail />} />
+              <Route path="/aegis/rules" element={<AegisRules />} />
               {/* Legacy redirects */}
               <Route path="/staking" element={<Navigate to="/accountability" replace />} />
               <Route path="/my-bonds" element={<Navigate to="/accountability" replace />} />
