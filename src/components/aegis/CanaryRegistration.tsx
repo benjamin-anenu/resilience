@@ -31,23 +31,28 @@ export function CanaryRegistration() {
 
     setSubmitting(true);
     try {
-      // Generate a random API key for the canary node
       const generatedKey = crypto.randomUUID() + '-' + crypto.randomUUID();
       const keyHash = await hashKey(generatedKey);
 
-      const { error } = await supabase.from('canary_nodes').insert({
-        node_id: nodeId.trim(),
-        wallet_address: publicKey.toBase58(),
-        api_key_hash: keyHash,
-        geographic_region: region,
-        status: 'PENDING',
+      const { data, error } = await supabase.functions.invoke('register-canary-node', {
+        body: {
+          node_id: nodeId.trim(),
+          wallet_address: publicKey.toBase58(),
+          api_key_hash: keyHash,
+          geographic_region: region,
+        },
       });
 
       if (error) {
-        if (error.code === '23505') {
+        toast.error('Registration failed: ' + error.message);
+        return;
+      }
+
+      if (data?.error) {
+        if (data.code === '23505') {
           toast.error('Node ID already exists');
         } else {
-          toast.error('Registration failed: ' + error.message);
+          toast.error('Registration failed: ' + data.error);
         }
         return;
       }
