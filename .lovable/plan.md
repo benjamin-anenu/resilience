@@ -1,38 +1,38 @@
 
 
-# Aegis Security Hardening — Implemented
+# Aegis Security Hardening — Round 2
 
 ## Status: ✅ COMPLETED
 
-### Changes Made
+### Round 1 Changes (Previous)
+1. **canary-ingest** — API key validation via SHA-256 hash comparison
+2. **CanaryProbeSubmission.tsx** — Success/failure toggle, API key sent to backend
+3. **register-canary-node** — Nodes start as PENDING
+4. **Rate limiting** — 1 probe per node per protocol per 2 minutes
+5. **Consensus minimum** — Raised from 3 → 5 canaries
 
-#### 1. **canary-ingest** — API key validation + rate limiting
-- Browser probes now **require a valid API key** — hashed with SHA-256 and compared against stored `api_key_hash`
-- Invalid API keys penalize reputation (-5) and log to audit trail
-- **Rate limiting**: max 1 probe per node per protocol per 2 minutes (429 response)
-- **Consensus minimum raised** from 3 → 5 unique canaries required for alert-triggering consensus
-- PENDING nodes auto-activate on first valid authenticated probe
+### Round 2 Changes (This Update)
 
-#### 2. **CanaryProbeSubmission.tsx** — Browser UI fixes
-- Added **success/failure toggle** (was hardcoded `success: true`)
-- API key now **sent to edge function** for validation (was collected but never transmitted)
-- Better error handling: shows edge function error messages in UI
+#### 6. **canary_nodes_public view** — Hide sensitive fields
+- Created `canary_nodes_public` view exposing only safe columns (no `wallet_address`, `api_key_hash`)
+- Locked `canary_nodes` table to `service_role` only for SELECT
+- `CanaryStatus.tsx` now queries the safe view instead of the raw table
 
-#### 3. **register-canary-node** — Sybil prevention
-- New nodes register as **PENDING** (was ACTIVE) — prevents instant sybil attacks
-- Nodes activate only after submitting a valid authenticated probe
+#### 7. **canary-ingest rate limit fix** — Protocol-scoped
+- Rate limit now filters by both `probe_name` AND `protocol_id`
+- Previously only filtered by `probe_name`, blocking all probes after hitting limit on one protocol
 
-### Security improvements summary
-| Vector | Before | After |
-|--------|--------|-------|
-| API key validation | Never checked | SHA-256 hash comparison |
-| Browser probe auth | None (bypass) | API key required |
-| Sybil registration | Auto-ACTIVE | PENDING → activate on valid probe |
-| Rate limiting | None | 1 probe/protocol/2min per node |
-| Consensus minimum | 3 nodes | 5 nodes |
-| Probe result | Hardcoded true | User-toggleable |
+#### 8. **alert-router memory leak fix**
+- `sentThisRun` dedup `Set` was module-level — could grow unboundedly across invocations in Deno Deploy
+- Moved to per-request factory function `createLocalDedup()` so each invocation gets a fresh Set
 
-### Remaining items (deferred)
-- Wallet signature verification for subscription manager
-- Missing secrets: `RESEND_API_KEY`, `AEGIS_ONCHAIN_KEYPAIR`
-- RLS policy to hide `wallet_address` from public canary_nodes reads
+### Remaining Known Gaps (Deferred)
+
+| Gap | Severity | Status |
+|-----|----------|--------|
+| Subscription manager lacks wallet signature auth | P1 | Deferred — requires client-side signing UX |
+| Missing secrets: `RESEND_API_KEY`, `AEGIS_ONCHAIN_KEYPAIR` | P2 | Requires user to provide keys |
+| Missing secret: `VALIDATORS_APP_TOKEN` | P3 | Validators.app endpoint works without token (limited) |
+| Email `from:` address `alerts@aegis.build` not configured in Resend | P2 | Requires Resend domain verification |
+| No pg_cron for detection engine | P2 | Needs external scheduler or pg_cron setup |
+| Discord webhook URL not validated | P3 | Low risk — fails gracefully |
