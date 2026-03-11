@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.manage-aegis-subscriptions]
 verify_jwt = false
+
+[functions.register-canary-node]
+verify_jwt = false
