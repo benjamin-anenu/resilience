@@ -142,17 +142,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "system", action: "canary_auto_activated", new_values: { node_id: report.node_id } });
   }
 
-  // ── RATE LIMITING: max 1 probe per protocol per 2 minutes ──
+  // ── RATE LIMITING: max 1 probe per protocol per probe_name per 2 minutes ──
   const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  // Look up protocol first for rate limiting (also needed below)
+  const { data: protocol } = await supabase.from("protocols").select("id, name, slug").eq("slug", report.protocol_slug).eq("is_active", true).maybeSingle();
+  if (!protocol) return new Response(JSON.stringify({ error: `Unknown protocol: ${report.protocol_slug}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   const { data: recentProbes } = await supabase.from("canary_reports")
-    .select("id").eq("canary_id", canary.id).eq("probe_name", report.probe_name)
+    .select("id").eq("canary_id", canary.id).eq("probe_name", report.probe_name).eq("protocol_id", protocol.id)
     .gte("reported_at", twoMinAgo).limit(1);
   if (recentProbes && recentProbes.length > 0) {
     return new Response(JSON.stringify({ error: "Rate limited: max 1 probe per protocol per 2 minutes" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  const { data: protocol } = await supabase.from("protocols").select("id, name, slug").eq("slug", report.protocol_slug).eq("is_active", true).maybeSingle();
-  if (!protocol) return new Response(JSON.stringify({ error: `Unknown protocol: ${report.protocol_slug}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  // protocol already looked up above for rate limiting
 
   await supabase.from("canary_reports").insert({
     canary_id: canary.id, protocol_id: protocol.id, probe_name: report.probe_name,

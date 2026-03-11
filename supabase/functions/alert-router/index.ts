@@ -134,12 +134,14 @@ async function sendNtfy(topic: string, alert: AlertPayload): Promise<{ success: 
   return { success: true };
 }
 
-const sentThisRun = new Set<string>();
-function checkLocalDedup(subscriberId: string, alertId: string): boolean {
-  const key = `${subscriberId}:${alertId}`;
-  if (sentThisRun.has(key)) return true;
-  sentThisRun.add(key);
-  return false;
+function createLocalDedup() {
+  const sentThisRun = new Set<string>();
+  return function checkLocalDedup(subscriberId: string, alertId: string): boolean {
+    const key = `${subscriberId}:${alertId}`;
+    if (sentThisRun.has(key)) return true;
+    sentThisRun.add(key);
+    return false;
+  };
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -183,6 +185,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   let sent = 0; let failed = 0; let deduped = 0;
+  const checkLocalDedup = createLocalDedup();
   const notifLogs: Array<{
     alert_id: string; subscriber_id: string; channel: string;
     destination: string; status: string; error_message?: string;

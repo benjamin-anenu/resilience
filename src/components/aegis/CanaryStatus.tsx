@@ -20,13 +20,14 @@ export function CanaryStatus() {
 
   useEffect(() => {
     const fetchCanaries = async () => {
+      // Use the public-safe view that hides wallet_address and api_key_hash
       const { data } = await supabase
-        .from('canary_nodes')
+        .from('canary_nodes_public' as any)
         .select('id, node_id, reputation_score, total_reports, accurate_reports, geographic_region, status, last_seen_at')
         .eq('status', 'ACTIVE')
         .order('reputation_score', { ascending: false })
         .limit(10);
-      if (data) setCanaries(data as CanaryNode[]);
+      if (data) setCanaries(data as unknown as CanaryNode[]);
       setLoading(false);
     };
     fetchCanaries();
