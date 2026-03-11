@@ -52,7 +52,7 @@ export function SignalHistoryChart() {
         .from('signal_baselines')
         .select('mean_24h, stddev_24h')
         .eq('protocol_id', selectedProtocol)
-        .eq('signal_type', selectedSignal)
+        .eq('signal_type', selectedSignal as any)
         .maybeSingle();
 
       if (baselineData) {
