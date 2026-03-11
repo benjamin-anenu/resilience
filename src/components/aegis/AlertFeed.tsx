@@ -79,8 +79,9 @@ export function AlertFeed() {
         return (
           <div
             key={alert.id}
+            onClick={() => navigate(`/aegis/alert/${alert.id}`)}
             className={cn(
-              'rounded-lg border border-border bg-card p-4 border-l-4 transition-colors hover:bg-card/80',
+              'rounded-lg border border-border bg-card p-4 border-l-4 transition-colors hover:bg-card/80 cursor-pointer',
               styles.border,
             )}
           >
