@@ -1,7 +1,7 @@
 // ============================================================
 // AEGIS — CANARY INGEST (Supabase Edge Function)
 // Receives probe reports from canary nodes
-// Validates signature, updates reputation, builds consensus
+// Validates API key + signature, updates reputation, builds consensus
 // ============================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -23,6 +23,14 @@ interface CanaryReport {
   timestamp: number;
   signature: string;
   version: string;
+  api_key?: string; // Required for browser probes
+}
+
+async function hashKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 async function verifySignature(report: CanaryReport, walletAddress: string): Promise<boolean> {
@@ -76,7 +84,8 @@ async function buildConsensus(
   const failures = deduped.filter((r) => !r.success).length;
   const latencies = deduped.filter((r) => r.latency_ms != null).map((r) => r.latency_ms!);
   const avgLatency = latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : null;
-  return { total, failures, failureRate: total > 0 ? failures / total : 0, avgLatency, consensusReached: total >= 3 };
+  // Require minimum 5 unique canaries for P1/P2 alert consensus
+  return { total, failures, failureRate: total > 0 ? failures / total : 0, avgLatency, consensusReached: total >= 5 };
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -97,22 +106,49 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (ageSec > 300 || ageSec < -30) return new Response(JSON.stringify({ error: "Report timestamp out of range" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   const { data: canary } = await supabase.from("canary_nodes")
-    .select("id, wallet_address, reputation_score, status, total_reports, accurate_reports, false_reports")
+    .select("id, wallet_address, reputation_score, status, total_reports, accurate_reports, false_reports, api_key_hash")
     .eq("node_id", report.node_id).maybeSingle();
   if (!canary) return new Response(JSON.stringify({ error: "Canary node not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  if (["BANNED", "SUSPENDED", "PENDING"].includes(canary.status)) return new Response(JSON.stringify({ error: `Canary node is ${canary.status.toLowerCase()}` }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  if (["BANNED", "SUSPENDED"].includes(canary.status)) return new Response(JSON.stringify({ error: `Canary node is ${canary.status.toLowerCase()}` }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   const isLowReputation = canary.reputation_score < 20;
-
-  // Browser-submitted probes use a placeholder signature; skip Ed25519 for those
   const isBrowserProbe = report.signature.startsWith("browser-");
-  if (!isBrowserProbe) {
+
+  // ── AUTHENTICATION ──────────────────────────────────────────
+  if (isBrowserProbe) {
+    // Browser probes MUST supply a valid API key
+    if (!report.api_key) {
+      return new Response(JSON.stringify({ error: "API key required for browser probes" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const submittedHash = await hashKey(report.api_key);
+    if (submittedHash !== canary.api_key_hash) {
+      await supabase.from("canary_nodes").update({ reputation_score: Math.max(0, canary.reputation_score - 5), last_seen_at: new Date().toISOString() }).eq("id", canary.id);
+      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_api_key", new_values: { node_id: report.node_id } });
+      return new Response(JSON.stringify({ error: "Invalid API key" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+  } else {
+    // CLI probes use Ed25519 signature verification
     const sigValid = await verifySignature(report, canary.wallet_address);
     if (!sigValid) {
       await supabase.from("canary_nodes").update({ reputation_score: Math.max(0, canary.reputation_score - 10), last_seen_at: new Date().toISOString() }).eq("id", canary.id);
       await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_signature", new_values: { node_id: report.node_id, protocol_slug: report.protocol_slug } });
       return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+  }
+
+  // ── PENDING NODE: auto-activate on first valid probe ────────
+  if (canary.status === "PENDING") {
+    await supabase.from("canary_nodes").update({ status: "ACTIVE" }).eq("id", canary.id);
+    await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "system", action: "canary_auto_activated", new_values: { node_id: report.node_id } });
+  }
+
+  // ── RATE LIMITING: max 1 probe per protocol per 2 minutes ──
+  const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  const { data: recentProbes } = await supabase.from("canary_reports")
+    .select("id").eq("canary_id", canary.id).eq("probe_name", report.probe_name)
+    .gte("reported_at", twoMinAgo).limit(1);
+  if (recentProbes && recentProbes.length > 0) {
+    return new Response(JSON.stringify({ error: "Rate limited: max 1 probe per protocol per 2 minutes" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
   const { data: protocol } = await supabase.from("protocols").select("id, name, slug").eq("slug", report.protocol_slug).eq("is_active", true).maybeSingle();

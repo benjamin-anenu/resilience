@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
       wallet_address,
       api_key_hash,
       geographic_region,
-      status: "ACTIVE",
+      status: "PENDING",
     }).select("id").single();
 
     if (error) {

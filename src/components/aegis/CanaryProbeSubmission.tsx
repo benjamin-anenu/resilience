@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Radio, Send, CheckCircle2, XCircle, Loader2, Zap } from 'lucide-react';
+import { Send, CheckCircle2, XCircle, Loader2, Zap } from 'lucide-react';
 
 interface ProbeResult {
   success: boolean;
@@ -31,6 +32,7 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ProbeResult | null>(null);
   const [rawResult, setRawResult] = useState('');
+  const [probeSuccess, setProbeSuccess] = useState(true);
   const [protocols, setProtocols] = useState<{ slug: string; name: string }[]>([]);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
       return;
     }
     if (!probeType || !protocolSlug.trim() || !storedApiKey.trim()) {
-      toast.error('Fill in all required fields');
+      toast.error('Fill in all required fields (including API key)');
       return;
     }
 
@@ -54,9 +56,8 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
     try {
       const start = Date.now();
       const timestamp = Math.floor(Date.now() / 1000);
-
-      // Look up the node_id from the API key by querying canary_nodes for this wallet
       const walletAddr = publicKey.toBase58();
+
       const { data: nodeData } = await supabase
         .from('canary_nodes')
         .select('node_id')
@@ -75,12 +76,13 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
           node_id: nodeData.node_id,
           protocol_slug: protocolSlug.trim(),
           probe_name: probeType,
-          success: true,
+          success: probeSuccess,
           latency_ms: Date.now() - start,
           raw_result: rawResult ? (() => { try { return JSON.parse(rawResult); } catch { return { raw: rawResult }; } })() : {},
           timestamp,
           signature: `browser-${timestamp}-${walletAddr.slice(0, 8)}`,
           version: '1.0.0-browser',
+          api_key: storedApiKey.trim(),
         },
       });
 
@@ -89,6 +91,9 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
       if (error) {
         setResult({ success: false, latencyMs: latency, errorMessage: error.message });
         toast.error('Probe submission failed');
+      } else if (data?.error) {
+        setResult({ success: false, latencyMs: latency, errorMessage: data.error });
+        toast.error(data.error);
       } else {
         setResult({ success: true, latencyMs: latency });
         toast.success('Probe submitted successfully');
@@ -147,9 +152,7 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
                   <SelectContent>
                     {PROBE_TYPES.map((p) => (
                       <SelectItem key={p.value} value={p.value}>
-                        <div>
-                          <span className="text-xs">{p.label}</span>
-                        </div>
+                        <span className="text-xs">{p.label}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -171,6 +174,30 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Probe result toggle */}
+            <div className="flex items-center justify-between rounded-md border border-border/50 p-3">
+              <div>
+                <p className="text-xs font-semibold text-foreground">Probe Result</p>
+                <p className="text-[10px] text-muted-foreground font-mono">
+                  {probeSuccess ? 'Reporting: protocol is healthy' : 'Reporting: protocol failure detected'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={cn(
+                  'text-[10px]',
+                  probeSuccess
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                )}>
+                  {probeSuccess ? 'HEALTHY' : 'FAILURE'}
+                </Badge>
+                <Switch
+                  checked={probeSuccess}
+                  onCheckedChange={setProbeSuccess}
+                />
               </div>
             </div>
 
