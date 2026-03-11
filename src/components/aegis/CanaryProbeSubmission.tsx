@@ -47,18 +47,34 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
 
     try {
       const start = Date.now();
+      const timestamp = Math.floor(Date.now() / 1000);
+
+      // Look up the node_id from the API key by querying canary_nodes for this wallet
+      const walletAddr = publicKey.toBase58();
+      const { data: nodeData } = await supabase
+        .from('canary_nodes')
+        .select('node_id')
+        .eq('wallet_address', walletAddr)
+        .limit(1)
+        .maybeSingle();
+
+      if (!nodeData) {
+        toast.error('No registered canary node found for this wallet');
+        setSubmitting(false);
+        return;
+      }
 
       const { data, error } = await supabase.functions.invoke('canary-ingest', {
         body: {
-          api_key: storedApiKey,
-          reports: [{
-            probe_name: probeType,
-            protocol_slug: protocolSlug.trim(),
-            success: true,
-            latency_ms: Date.now() - start,
-            raw_result: rawResult ? JSON.parse(rawResult) : {},
-            signature: `browser-${Date.now()}-${publicKey.toBase58().slice(0, 8)}`,
-          }],
+          node_id: nodeData.node_id,
+          protocol_slug: protocolSlug.trim(),
+          probe_name: probeType,
+          success: true,
+          latency_ms: Date.now() - start,
+          raw_result: rawResult ? JSON.parse(rawResult) : {},
+          timestamp,
+          signature: `browser-${timestamp}-${walletAddr.slice(0, 8)}`,
+          version: '1.0.0-browser',
         },
       });
 
