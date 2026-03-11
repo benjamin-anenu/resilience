@@ -185,6 +185,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   let sent = 0; let failed = 0; let deduped = 0;
+  const checkLocalDedup = createLocalDedup();
   const notifLogs: Array<{
     alert_id: string; subscriber_id: string; channel: string;
     destination: string; status: string; error_message?: string;

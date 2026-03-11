@@ -27,7 +27,7 @@ export function CanaryStatus() {
         .eq('status', 'ACTIVE')
         .order('reputation_score', { ascending: false })
         .limit(10);
-      if (data) setCanaries(data as CanaryNode[]);
+      if (data) setCanaries(data as unknown as CanaryNode[]);
       setLoading(false);
     };
     fetchCanaries();

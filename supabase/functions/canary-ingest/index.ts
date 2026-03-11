@@ -155,8 +155,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({ error: "Rate limited: max 1 probe per protocol per 2 minutes" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  const { data: protocol } = await supabase.from("protocols").select("id, name, slug").eq("slug", report.protocol_slug).eq("is_active", true).maybeSingle();
-  if (!protocol) return new Response(JSON.stringify({ error: `Unknown protocol: ${report.protocol_slug}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  // protocol already looked up above for rate limiting
 
   await supabase.from("canary_reports").insert({
     canary_id: canary.id, protocol_id: protocol.id, probe_name: report.probe_name,
