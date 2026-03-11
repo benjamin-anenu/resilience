@@ -146,8 +146,8 @@ export default function AlertDetail() {
                 onUpdated={() => window.location.reload()}
               />
             </div>
+          </div>
 
-          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground font-mono">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" /> Fired {format(new Date(alert.fired_at), 'MMM dd, yyyy HH:mm:ss')}
             </span>
