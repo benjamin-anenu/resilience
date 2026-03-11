@@ -71,7 +71,7 @@ export function CanaryProbeSubmission({ apiKey }: { apiKey?: string }) {
           probe_name: probeType,
           success: true,
           latency_ms: Date.now() - start,
-          raw_result: rawResult ? JSON.parse(rawResult) : {},
+          raw_result: rawResult ? (() => { try { return JSON.parse(rawResult); } catch { return { raw: rawResult }; } })() : {},
           timestamp,
           signature: `browser-${timestamp}-${walletAddr.slice(0, 8)}`,
           version: '1.0.0-browser',
