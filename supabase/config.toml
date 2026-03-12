@@ -113,3 +113,6 @@ verify_jwt = false
 
 [functions.register-canary-node]
 verify_jwt = false
+
+[functions.generate-aegis-keypair]
+verify_jwt = false
