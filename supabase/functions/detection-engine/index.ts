@@ -407,11 +407,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const authHeader  = req.headers.get("Authorization");
   const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const anonKey     = Deno.env.get("SUPABASE_ANON_KEY");
   const cronSecret  = Deno.env.get("AEGIS_CRON_SECRET");
   const isAuth      = authHeader === `Bearer ${serviceKey}`
+    || authHeader === `Bearer ${anonKey}`
     || req.headers.get("X-Aegis-Cron-Secret") === cronSecret;
 
   if (!isAuth) {
+    console.error("[AEGIS] Auth failed — no valid credential provided");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -419,6 +422,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const runId    = crypto.randomUUID();
   const start    = Date.now();
+  console.log(`[AEGIS] Run ${runId} started`);
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
