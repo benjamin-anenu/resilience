@@ -1,38 +1,12 @@
 
 
-# Aegis Security Hardening — Round 2
+# Save VALIDATORS_APP_TOKEN + Clean Up Temp Function
 
-## Status: ✅ COMPLETED
+## Steps
 
-### Round 1 Changes (Previous)
-1. **canary-ingest** — API key validation via SHA-256 hash comparison
-2. **CanaryProbeSubmission.tsx** — Success/failure toggle, API key sent to backend
-3. **register-canary-node** — Nodes start as PENDING
-4. **Rate limiting** — 1 probe per node per protocol per 2 minutes
-5. **Consensus minimum** — Raised from 3 → 5 canaries
+1. **Save VALIDATORS_APP_TOKEN** — I'll prompt you to paste your validators.app API key as a secret called `VALIDATORS_APP_TOKEN`. This is used by the detection engine's `ingestValidatorHealth()` function.
 
-### Round 2 Changes (This Update)
+2. **Delete `generate-aegis-keypair` function** — Remove `supabase/functions/generate-aegis-keypair/index.ts` and its config entry from `supabase/config.toml`.
 
-#### 6. **canary_nodes_public view** — Hide sensitive fields
-- Created `canary_nodes_public` view exposing only safe columns (no `wallet_address`, `api_key_hash`)
-- Locked `canary_nodes` table to `service_role` only for SELECT
-- `CanaryStatus.tsx` now queries the safe view instead of the raw table
+Both are quick, no code logic changes needed.
 
-#### 7. **canary-ingest rate limit fix** — Protocol-scoped
-- Rate limit now filters by both `probe_name` AND `protocol_id`
-- Previously only filtered by `probe_name`, blocking all probes after hitting limit on one protocol
-
-#### 8. **alert-router memory leak fix**
-- `sentThisRun` dedup `Set` was module-level — could grow unboundedly across invocations in Deno Deploy
-- Moved to per-request factory function `createLocalDedup()` so each invocation gets a fresh Set
-
-### Remaining Known Gaps (Deferred)
-
-| Gap | Severity | Status |
-|-----|----------|--------|
-| Subscription manager lacks wallet signature auth | P1 | Deferred — requires client-side signing UX |
-| Missing secrets: `RESEND_API_KEY`, `AEGIS_ONCHAIN_KEYPAIR` | P2 | Requires user to provide keys |
-| Missing secret: `VALIDATORS_APP_TOKEN` | P3 | Validators.app endpoint works without token (limited) |
-| Email `from:` address `alerts@aegis.build` not configured in Resend | P2 | Requires Resend domain verification |
-| No pg_cron for detection engine | P2 | Needs external scheduler or pg_cron setup |
-| Discord webhook URL not validated | P3 | Low risk — fails gracefully |
