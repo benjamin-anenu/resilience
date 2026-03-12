@@ -407,11 +407,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const authHeader  = req.headers.get("Authorization");
   const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const anonKey     = Deno.env.get("SUPABASE_ANON_KEY");
   const cronSecret  = Deno.env.get("AEGIS_CRON_SECRET");
   const isAuth      = authHeader === `Bearer ${serviceKey}`
+    || authHeader === `Bearer ${anonKey}`
     || req.headers.get("X-Aegis-Cron-Secret") === cronSecret;
 
   if (!isAuth) {
+    console.error("[AEGIS] Auth failed — no valid credential provided");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -419,6 +422,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const runId    = crypto.randomUUID();
   const start    = Date.now();
+  console.log(`[AEGIS] Run ${runId} started`);
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -442,6 +446,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const validatorsToken = Deno.env.get("VALIDATORS_APP_TOKEN");
+    const INGESTOR_NAMES = ["DefiLlama TVL", "Jupiter Prices", "Solana Network", "Pyth Oracles", "Validator Health", "Bridge Health"];
     const results = await Promise.allSettled([
       ingestDefiLlamaTvl(protocols),
       ingestJupiterPrices(protocols),
@@ -450,6 +455,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       ingestValidatorHealth(protocols, validatorsToken),
       ingestBridgeHealth(protocols),
     ]);
+
+    // Log per-ingestor results
+    results.forEach((r, i) => {
+      if (r.status === "rejected") {
+        console.error(`[AEGIS] Ingestor "${INGESTOR_NAMES[i]}" failed:`, r.reason);
+      } else {
+        console.log(`[AEGIS] Ingestor "${INGESTOR_NAMES[i]}": ${r.value.length} signals`);
+      }
+    });
 
     const allSignals: Signal[] = results
       .flatMap((r) => r.status === "fulfilled" ? r.value : [])
@@ -506,6 +520,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const duration = Date.now() - start;
+    console.log(`[AEGIS] Run ${runId} complete — ${enrichedSignals.length} signals, ${alertsFired} alerts, ${duration}ms`);
     await supabase.from("aegis_system_health").update({
       status: "healthy", last_success_at: new Date().toISOString(),
       metrics: { signals_ingested: enrichedSignals.length, alerts_fired: alertsFired, duration_ms: duration, run_id: runId },

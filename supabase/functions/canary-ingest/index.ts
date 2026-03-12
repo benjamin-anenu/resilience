@@ -92,10 +92,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("cf-connecting-ip") || "unknown";
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   let report: CanaryReport;
   try { report = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+
+  // Payload size guard: reject raw_result > 10KB
+  if (report.raw_result && JSON.stringify(report.raw_result).length > 10240) {
+    return new Response(JSON.stringify({ error: "raw_result payload exceeds 10KB limit" }), { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
 
   for (const field of ["node_id", "protocol_slug", "probe_name", "timestamp", "signature", "version"]) {
     if (!(field in report)) return new Response(JSON.stringify({ error: `Missing field: ${field}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -123,7 +129,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const submittedHash = await hashKey(report.api_key);
     if (submittedHash !== canary.api_key_hash) {
       await supabase.from("canary_nodes").update({ reputation_score: Math.max(0, canary.reputation_score - 5), last_seen_at: new Date().toISOString() }).eq("id", canary.id);
-      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_api_key", new_values: { node_id: report.node_id } });
+      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_api_key", ip_address: clientIp, new_values: { node_id: report.node_id } });
       return new Response(JSON.stringify({ error: "Invalid API key" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
   } else {
@@ -131,7 +137,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const sigValid = await verifySignature(report, canary.wallet_address);
     if (!sigValid) {
       await supabase.from("canary_nodes").update({ reputation_score: Math.max(0, canary.reputation_score - 10), last_seen_at: new Date().toISOString() }).eq("id", canary.id);
-      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_signature", new_values: { node_id: report.node_id, protocol_slug: report.protocol_slug } });
+      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_signature", ip_address: clientIp, new_values: { node_id: report.node_id, protocol_slug: report.protocol_slug } });
       return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
   }
@@ -139,7 +145,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // ── PENDING NODE: auto-activate on first valid probe ────────
   if (canary.status === "PENDING") {
     await supabase.from("canary_nodes").update({ status: "ACTIVE" }).eq("id", canary.id);
-    await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "system", action: "canary_auto_activated", new_values: { node_id: report.node_id } });
+    await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "system", action: "canary_auto_activated", ip_address: clientIp, new_values: { node_id: report.node_id } });
   }
 
   // ── RATE LIMITING: max 1 probe per protocol per probe_name per 2 minutes ──
