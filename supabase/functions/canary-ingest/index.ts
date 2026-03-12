@@ -129,7 +129,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const submittedHash = await hashKey(report.api_key);
     if (submittedHash !== canary.api_key_hash) {
       await supabase.from("canary_nodes").update({ reputation_score: Math.max(0, canary.reputation_score - 5), last_seen_at: new Date().toISOString() }).eq("id", canary.id);
-      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_api_key", new_values: { node_id: report.node_id } });
+      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_api_key", ip_address: clientIp, new_values: { node_id: report.node_id } });
       return new Response(JSON.stringify({ error: "Invalid API key" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
   } else {
