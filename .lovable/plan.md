@@ -1,38 +1,41 @@
 
 
-# Aegis Security Hardening — Round 2
+# Aegis Security Hardening — Round 3
 
 ## Status: ✅ COMPLETED
 
-### Round 1 Changes (Previous)
-1. **canary-ingest** — API key validation via SHA-256 hash comparison
-2. **CanaryProbeSubmission.tsx** — Success/failure toggle, API key sent to backend
-3. **register-canary-node** — Nodes start as PENDING
-4. **Rate limiting** — 1 probe per node per protocol per 2 minutes
-5. **Consensus minimum** — Raised from 3 → 5 canaries
+### Round 3 Changes (This Update)
 
-### Round 2 Changes (This Update)
+#### 1. **Detection Engine Cron Auth Fix**
+- Root cause: Vault `AEGIS_CRON_SECRET` and edge function env secret were out of sync → silent 401 every 60s
+- Fix: Added anon key acceptance to detection engine auth (same pattern as all other cron jobs)
+- Recreated cron job with `Authorization: Bearer <anon_key>` — no vault dependency
+- `X-Aegis-Cron-Secret` and `Bearer <service_role_key>` still accepted as fallback auth
 
-#### 6. **canary_nodes_public view** — Hide sensitive fields
-- Created `canary_nodes_public` view exposing only safe columns (no `wallet_address`, `api_key_hash`)
-- Locked `canary_nodes` table to `service_role` only for SELECT
-- `CanaryStatus.tsx` now queries the safe view instead of the raw table
+#### 2. **Detection Engine Hardening**
+- Added structured logging: auth failures, run start/end, signal counts, duration
+- Added per-ingestor error logging via `Promise.allSettled` result inspection
+- Each ingestor's success/failure count now logged individually
 
-#### 7. **canary-ingest rate limit fix** — Protocol-scoped
-- Rate limit now filters by both `probe_name` AND `protocol_id`
-- Previously only filtered by `probe_name`, blocking all probes after hitting limit on one protocol
+#### 3. **Alert Router Hardening**
+- Added UUID format validation on `alert_id` (regex check)
+- Added JSON parse error handling (was uncaught)
+- Added structured logging: auth failures, alert processing start, delivery summary
 
-#### 8. **alert-router memory leak fix**
-- `sentThisRun` dedup `Set` was module-level — could grow unboundedly across invocations in Deno Deploy
-- Moved to per-request factory function `createLocalDedup()` so each invocation gets a fresh Set
+#### 4. **Canary Ingest Hardening**
+- Added `raw_result` payload size limit (rejects > 10KB with 413)
+- Added IP address extraction (`x-forwarded-for` / `cf-connecting-ip`)
+- All audit log entries now include `ip_address` field
+
+### Previous Rounds
+- Round 1: API key validation, PENDING status, rate limiting, consensus minimum
+- Round 2: `canary_nodes_public` view, protocol-scoped rate limits, alert-router memory leak fix
 
 ### Remaining Known Gaps (Deferred)
 
 | Gap | Severity | Status |
 |-----|----------|--------|
 | Subscription manager lacks wallet signature auth | P1 | Deferred — requires client-side signing UX |
-| Missing secrets: `RESEND_API_KEY`, `AEGIS_ONCHAIN_KEYPAIR` | P2 | Requires user to provide keys |
-| Missing secret: `VALIDATORS_APP_TOKEN` | P3 | Validators.app endpoint works without token (limited) |
+| Missing secret: `RESEND_API_KEY` | P2 | Requires user to provide key |
 | Email `from:` address `alerts@aegis.build` not configured in Resend | P2 | Requires Resend domain verification |
-| No pg_cron for detection engine | P2 | Needs external scheduler or pg_cron setup |
 | Discord webhook URL not validated | P3 | Low risk — fails gracefully |
