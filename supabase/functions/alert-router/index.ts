@@ -152,17 +152,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const authHeader = req.headers.get("Authorization");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (authHeader !== `Bearer ${serviceKey}`) {
+    console.error("[ALERT-ROUTER] Auth failed");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  const alert: AlertPayload = await req.json();
-  if (!alert.alert_id || !alert.severity) {
-    return new Response(JSON.stringify({ error: "Missing alert fields" }), {
+  let alert: AlertPayload;
+  try { alert = await req.json(); } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  // Validate UUID format
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!alert.alert_id || !UUID_RE.test(alert.alert_id) || !alert.severity) {
+    console.error("[ALERT-ROUTER] Invalid payload — missing or malformed alert_id/severity");
+    return new Response(JSON.stringify({ error: "Missing or invalid alert fields" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  console.log(`[ALERT-ROUTER] Processing alert ${alert.alert_id} (${alert.severity})`);
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const telegramBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
