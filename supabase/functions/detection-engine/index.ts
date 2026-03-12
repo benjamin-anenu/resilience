@@ -446,6 +446,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const validatorsToken = Deno.env.get("VALIDATORS_APP_TOKEN");
+    const INGESTOR_NAMES = ["DefiLlama TVL", "Jupiter Prices", "Solana Network", "Pyth Oracles", "Validator Health", "Bridge Health"];
     const results = await Promise.allSettled([
       ingestDefiLlamaTvl(protocols),
       ingestJupiterPrices(protocols),
@@ -454,6 +455,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       ingestValidatorHealth(protocols, validatorsToken),
       ingestBridgeHealth(protocols),
     ]);
+
+    // Log per-ingestor results
+    results.forEach((r, i) => {
+      if (r.status === "rejected") {
+        console.error(`[AEGIS] Ingestor "${INGESTOR_NAMES[i]}" failed:`, r.reason);
+      } else {
+        console.log(`[AEGIS] Ingestor "${INGESTOR_NAMES[i]}": ${r.value.length} signals`);
+      }
+    });
 
     const allSignals: Signal[] = results
       .flatMap((r) => r.status === "fulfilled" ? r.value : [])
