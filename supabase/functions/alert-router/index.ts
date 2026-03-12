@@ -233,6 +233,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (notifLogs.length > 0) {
     await supabase.from("aegis_notification_log").insert(notifLogs.map((l) => ({ ...l, sent_at: new Date().toISOString() })));
   }
+  console.log(`[ALERT-ROUTER] Alert ${alert.alert_id}: sent=${sent} failed=${failed} deduped=${deduped}`);
 
   // On-Chain Receipt — write a Solana memo transaction as tamper-proof proof
   let onchainSignature: string | null = null;

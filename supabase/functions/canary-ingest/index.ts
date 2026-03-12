@@ -145,7 +145,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // ── PENDING NODE: auto-activate on first valid probe ────────
   if (canary.status === "PENDING") {
     await supabase.from("canary_nodes").update({ status: "ACTIVE" }).eq("id", canary.id);
-    await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "system", action: "canary_auto_activated", new_values: { node_id: report.node_id } });
+    await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "system", action: "canary_auto_activated", ip_address: clientIp, new_values: { node_id: report.node_id } });
   }
 
   // ── RATE LIMITING: max 1 probe per protocol per probe_name per 2 minutes ──

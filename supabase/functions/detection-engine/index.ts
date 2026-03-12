@@ -520,6 +520,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const duration = Date.now() - start;
+    console.log(`[AEGIS] Run ${runId} complete — ${enrichedSignals.length} signals, ${alertsFired} alerts, ${duration}ms`);
     await supabase.from("aegis_system_health").update({
       status: "healthy", last_success_at: new Date().toISOString(),
       metrics: { signals_ingested: enrichedSignals.length, alerts_fired: alertsFired, duration_ms: duration, run_id: runId },
