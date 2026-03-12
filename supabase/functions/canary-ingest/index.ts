@@ -137,7 +137,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const sigValid = await verifySignature(report, canary.wallet_address);
     if (!sigValid) {
       await supabase.from("canary_nodes").update({ reputation_score: Math.max(0, canary.reputation_score - 10), last_seen_at: new Date().toISOString() }).eq("id", canary.id);
-      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_signature", new_values: { node_id: report.node_id, protocol_slug: report.protocol_slug } });
+      await supabase.from("aegis_audit_log").insert({ actor_id: canary.id, actor_type: "canary", action: "invalid_signature", ip_address: clientIp, new_values: { node_id: report.node_id, protocol_slug: report.protocol_slug } });
       return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
   }
