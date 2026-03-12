@@ -92,10 +92,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("cf-connecting-ip") || "unknown";
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   let report: CanaryReport;
   try { report = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+
+  // Payload size guard: reject raw_result > 10KB
+  if (report.raw_result && JSON.stringify(report.raw_result).length > 10240) {
+    return new Response(JSON.stringify({ error: "raw_result payload exceeds 10KB limit" }), { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
 
   for (const field of ["node_id", "protocol_slug", "probe_name", "timestamp", "signature", "version"]) {
     if (!(field in report)) return new Response(JSON.stringify({ error: `Missing field: ${field}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
